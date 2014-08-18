@@ -30,7 +30,7 @@ default_temporaryStorage    = os.getcwd()
 default_niceness            = 20
 default_fragmentSize        = 14
 
-version                     = "v3.0.5"
+version                     = "v3.0.6"
 
 
 class Options:
