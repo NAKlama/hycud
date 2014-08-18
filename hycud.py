@@ -101,7 +101,7 @@ if __name__ == '__main__':
       help="Directory for temporary files")
   argParser.add_argument('--threads', '-t',
       default=1, type=int,
-      help="Number of threads to run (Default: 1)")
+      help="Number of threads to run REMO with (Default: 1)")
   argParser.add_argument('--nice',
       default=default_niceness, type=int,
       help="Nice level to use (Default: 20)")
