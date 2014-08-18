@@ -3,7 +3,7 @@
 import argparse
 import io
 import os
-import string
+# import string
 import tempfile
 import pickle
 import gzip
@@ -163,8 +163,15 @@ if __name__ == '__main__':
   argParser.add_argument('--dumpDataTable',
       default="", type=str,
       help="Dump fragment Data into text table defined by argument")
+  argParser.add_argument('--version',
+      action="store_true",
+      help="Display HYCUD version number")
 
   args = vars(argParser.parse_args())
+
+  if args['version']:
+    print("{}".format(version[1:]))
+    sys.exit(0)
 
   if args['fragSize'] != (-1) and (args['fragments'] != "" or args['detailedFrag']):
     msg = "Please do not specify fragments manually when using the --fragSize option."
