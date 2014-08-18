@@ -271,7 +271,8 @@ if __name__ == '__main__':
       o.fragmentation.fragSize(fragSize)
 
     # Use sprouting tool to make sure we have a full protein
-    sproutModels(o,  models)
+    if not o.skipREMO:
+      sproutModels(o,  models)
     if o.verbose > 3:
       print("Residue Count  = {:n}".format(o.resCount))
       print("Fragment Count = {:n}".format(o.fragmentation.fragmentCount()))
@@ -388,10 +389,8 @@ if __name__ == '__main__':
       newModels.initFragStats(o)
       newModels.populateFragStats()
       newDev = newModels.getStdDevList(o)
-      outliers = newModels.findOutliers()
       if(o.verbose > 2):
-        print("Fragment outliers list: {!r}".format(outliers))
-        print("Deviations after removal: {!r}".format(newDev))
+        print("Deviations after probing removal: {!r}".format(newDev))
       if newModels.size() < origSize / 2:
         print("WARNING: Stopped discarding models, since more than half qualified for being discarded.")
         print("         Please choose a more appropriate minimum percentage change.")
@@ -414,7 +413,7 @@ if __name__ == '__main__':
       for n in fragNums:
         removeList.append(outliers[n]['num'])
       if(o.verbose > 2):
-        print("Fragments to be removed: {!r}".format(removeList))
+        print("Models to be removed: {!r}".format(removeList))
         print("Fragment count not satisfied before round: {:n}".format(len(fragNums)))
 
       # Optional code that would only remove if overall improvement exists

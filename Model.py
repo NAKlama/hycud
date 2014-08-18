@@ -541,7 +541,7 @@ class Models:
     out = printFragStatVal(
       "Translational diffusion coefficient",
       self.transStats['avg'],
-      "cm2/g",
+      "cm2/s",
       self.transStats['stdDev'])
     out()
 
@@ -549,12 +549,19 @@ class Models:
     return len(self.models)
 
   def subModels(self, size, offset=0):
-    self.models = self.models[offset:size]
+    endPos = size+offset
+    self.models = self.models[offset:endPos]
 
   def removeModels(self, mNumList):
     out = Models()
     out.statsExist = False
     out.fragmentation = self.fragmentation
+    modelNumbers = []
+    for m in self.models:
+      modelNumbers.append(m.num)
+    for exclNum in mNumList:
+      if exclNum not in modelNumbers:
+        printWarning("Models number {:n} does not exist, ignoring it.".format(exclNum))
     for m in self.models:
       if m.num not in mNumList:
         out.models.append(m)
