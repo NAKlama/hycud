@@ -30,7 +30,7 @@ default_temporaryStorage    = os.getcwd()
 default_niceness            = 20
 default_fragmentSize        = 14
 
-version                     = "v3.0.6"
+version                     = "v3.0.7"
 
 
 class Options:
@@ -163,6 +163,9 @@ if __name__ == '__main__':
   argParser.add_argument('--dumpDataTable',
       default="", type=str,
       help="Dump fragment Data into text table defined by argument")
+  argParser.add_argument('--displayHarmonicMean',
+      action='store_true',
+      help="Instead of averages display harmonic means")
   argParser.add_argument('--version',
       action="store_true",
       help="Display HYCUD version number")
@@ -223,6 +226,7 @@ if __name__ == '__main__':
   o.onlyTrans     = args['translationOnly']
   o.outDataTable  = args['dumpDataTable']
   o.verbData      = args['outputAdditionalData']
+  o.harmonicMean  = args['displayHarmonicMean']
 
   if o.onlyTrans and not o.translation:
     o.translation = True

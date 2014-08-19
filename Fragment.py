@@ -12,6 +12,7 @@ class FragStatistics:
     self.n        = 0
     self.avg      = FragValues()
     self.stdDev   = FragValues()
+    self.harmMean = FragValues()
     self.residues = 0
 
 
@@ -80,9 +81,12 @@ class FragmentStatistics:
       for frag in m.fragments:
         self.stats[frag.num].avg.addTo(frag.values)
         self.stats[frag.num].n     += 1
+        self.stats[frag.num].harmMean.addTo(frag.values.recip())
 
     for s in self.stats:
       s.avg.divTo(s.n)
+      s.harmMean.multTo(1.0 / s.n)
+      s.harmMean = s.harmMean.recip()
 
     for m in models.models:
       for frag in m.fragments:

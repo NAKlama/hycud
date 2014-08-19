@@ -49,6 +49,11 @@ class CalcValues:
     ret.hm  = math.sqrt(self.hm)
     return ret
 
+  def recip(self):
+    ret     = CalcValues()
+    ret.r   = 1.0 / self.r
+    ret.hm  = 1.0 / self.hm
+
   def out(self, prefix=""):
     print("{} r ={:e}".format(prefix, self.r))
     print("{} hm={:e}".format(prefix, self.hm))
@@ -120,6 +125,12 @@ class FragValues:
     ret.corrected   = self.corrected.sqr()
     ret.eta         = self.eta ** 2
     return ret
+
+  def recip(self):
+    ret             = FragValues()
+    ret.values      = self.values.recip()
+    ret.corrected   = self.corrected.recip()
+    ret.eta         = 1.0 / self.eta
 
   def getEta(self):
     return self.eta

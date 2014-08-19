@@ -516,22 +516,25 @@ class Models:
       print("--- Fragment #{:n}  {:n} residues ({}) ---".format(
         i, stat.residues, stat.resPrint))
       printList = []
-      if(opt.verbData):
+      avg = stat.avg
+      if opt.harmonicMean:
+        avg = stat.harmMean
+      if opt.verbData:
         printList.append(printFragStatVal("Radius                   ",
-                          stat.avg.getR(corr=False),
+                          avg.getR(corr=False),
                           "cm   ", stat.stdDev.getR(corr=False)))
       printList.append(printFragStatVal("Harmonic mean time       ",
-                        stat.avg.getHM(corr=False),
+                        avg.getHM(corr=False),
                         "s    ", stat.stdDev.getHM(corr=False)))
       printList.append(printFragStatVal("Intrinsic viscosity      ",
-                        stat.avg.getEta(),
+                        avg.getEta(),
                         "cm3/g", stat.stdDev.getEta()))
       if(opt.verbData):
         printList.append(printFragStatVal("Corr. Radius             ",
-                          stat.avg.getR(corr=True),
+                          avg.getR(corr=True),
                           "cm   ", stat.stdDev.getR(corr=True)))
       printList.append(printFragStatVal("Corr. Harmonic mean time ",
-                        stat.avg.getHM(corr=True),
+                        avg.getHM(corr=True),
                         "s    ", stat.stdDev.getHM(corr=True)))
       for item in printList:
         item()
