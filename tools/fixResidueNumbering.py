@@ -47,7 +47,7 @@ if __name__ == '__main__':
     modelMatch  = modelParser.match(line)
     if atomMatch:
       atomNum   = int(atomMatch.group(1))
-      atomName  = atomMatch.group(2).strip()
+      atomName  = atomMatch.group(2)
       resName   = atomMatch.group(3).strip()
       misc1     = atomMatch.group(4)
       resNum    = int(atomMatch.group(5))
