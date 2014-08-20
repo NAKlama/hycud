@@ -25,8 +25,4 @@ tar: .packDirectory
 clean:
 	-rm -Rf .packDirectory
 	-rm -Rf __pycache__
-	-rm -Rf $(PACKDIR)
-	-rm -Rf *.zip
-	-rm -Rf *.tar.gz
-	-rm -Rf *.tar.bz2
-	-rm -Rf *.tar.xz
+	-rm -Rf hycud-*.*.*
