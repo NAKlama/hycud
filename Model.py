@@ -500,21 +500,11 @@ class Models:
 
   def transStatisticss(self):
     """This function does the translational statistics"""
-    avg = 0.0
-    n   = 0
-
+    stat = StatItem()
     for m in self.models:
-      avg += m.transDiff
-      n   += 1
+      stat.addValue(m.transDiff)
 
-    avg /= n
-
-    stdDev = 0
-    for m in self.models:
-      stdDev += (m.transDiff - avg)**2
-    stdDev = math.sqrt(stdDev / n)
-
-    self.transStats = {'avg': avg, 'stdDev': stdDev}
+    self.transStats = {'avg': stat.getAvg(), 'stdDev': stat.getStdDev()}
 
   def outputFragResults(self, opt):
     """Print per fragment statistics"""
