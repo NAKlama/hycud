@@ -167,7 +167,7 @@ if __name__ == '__main__':
       help="Dump fragment Data into text table defined by argument")
   argParser.add_argument('--displayHarmonicMean',
       action='store_true',
-      help="Instead of averages display harmonic means")
+      help="Instead of arithmetric averages display harmonic means")
   argParser.add_argument('--version',
       action="store_true",
       help="Display HYCUD version number")
