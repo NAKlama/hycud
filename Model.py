@@ -437,11 +437,11 @@ class Models:
         fragI.values.uncorrectedWeight  = fragI.values.values.mult(fragI.getWeight())
         fragI.values.uncorrectedProtons = fragI.values.values.mult(fragI.getProtons())
 
-  def calculateWeightingFactorsMT(self, opt):
-    from MTFunctions import calcWeightFact
-    from multiprocessing import Pool
-    pool = Pool(processes=opt.threads)
-    pool.map(calcWeightFact, self.models)
+  # def calculateWeightingFactorsMT(self, opt):
+  #   from MTFunctions import calcWeightFact
+  #   from multiprocessing import Pool
+  #   pool = Pool(processes=opt.threads)
+  #   pool.map(calcWeightFact, self.models)
 
   def initFragStats(self, o):
     self.fragStats = FragmentStatistics(o)
