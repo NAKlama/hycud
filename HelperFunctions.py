@@ -7,6 +7,7 @@ from Parsers import pdbParser, versionParser, bracketParser, atomExtractor
 
 
 def ANSI_ESC():
+  """This returns the ESC-[ needed for many ANSI codes"""
   return "\x1b["
 
 

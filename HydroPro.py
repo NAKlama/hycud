@@ -24,20 +24,26 @@ def hydroPro(opt, models):
   taskDesc      = HydroProThread(opt, False)
   transTaskDesc = HydroProThread(opt, True)
 
-  # Although the capability to start Hydropro in parallel threads still exists,
-  # it is not used, since HydroPro 10 will use all cores it can get, making multiple
-  # instances of HydroPro ineffective
   done  = 0
   count = models.size()
-  for m in models.models:
-    if opt.verbose > 0:
-      done += 1
-      print("{0}2K{0}1GCalculating HydroPro {1:6n}/{2:n}".format(
-        ANSI_ESC(), done, count), end='')
-      flush()
+  if opt.hydroMT > 1:
+    from multprocessing import Pool
+    hp_pool = Pool(processes=opt.hydroMT)
     if opt.translation:
-      transTaskDesc(m)
+      hp_pool.map(taskDesc, models.models)
     if not opt.onlyTrans:
-      taskDesc(m)
-  if opt.verbose > 0:
-    print("")
+      hp_pool.map(transTaskDesc, models.models)
+  else:
+    for m in models.models:
+      if opt.verbose > 0:
+        done += 1
+        # Print progress, while staying on one line, using ANSI ESC Sequences
+        print("{0}2K{0}1GCalculating HydroPro {1:6n}/{2:n}".format(
+          ANSI_ESC(), done, count), end='')
+        flush()
+      if opt.translation:
+        transTaskDesc(m)
+      if not opt.onlyTrans:
+        taskDesc(m)
+    if opt.verbose > 0:
+      print("")

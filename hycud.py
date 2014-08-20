@@ -46,6 +46,15 @@ default_fragmentSize        = 14
 # the default template
 default_templateFile        = "hydropro.dat"
 
+# Since HydroPro runs multi threded, this isn't usually needed, and may
+# get you in trouble with your administator, since it will make the load
+# average of the machine increase a lot
+#
+# On machines with many cores, activating this will give you an option to
+# run several instances of HydroPro in parallel
+#allow_HydroPro_MultiTreaded = True
+allow_HydroPro_MultiTreaded = False
+
 ##########################################################
 # Don't change anything below this line for normal usage #
 ##########################################################
@@ -68,7 +77,7 @@ from HydroPro         import hydroPro
 from DataDump         import DataDump
 
 default_temporaryStorage    = path.abspath(default_temporaryStorage)
-version                     = "v3.0.8"
+version                     = "v3.1.0"
 
 
 class Options:
@@ -143,6 +152,10 @@ if __name__ == '__main__':
   argParser.add_argument('--threads', '-t',
       default=default_threads, type=int,
       help="Number of threads to run REMO with (Default: {:n})".format(default_threads))
+  if allow_HydroPro_MultiTreaded:
+    argParser.add_argument('--hydroProThreads',
+      default=1, type=int,
+      help="Number of threads to run HydroPro with    USE WITH CAUTION!")
   argParser.add_argument('--nice',
       default=default_niceness, type=int,
       help="Nice level to use (Default: {:n})".format(default_niceness))
@@ -272,6 +285,10 @@ if __name__ == '__main__':
   o.outDataTable  = args['dumpDataTable']
   o.verbData      = args['outputAdditionalData']
   o.harmonicMean  = args['displayHarmonicMean']
+  if allow_HydroPro_MultiTreaded:
+    o.hydroMT     = args['hydroProThreads']
+  else:
+    o.hydroMT     = 1
 
   # If we are only claculation translation, we swich on translation calculation
   if o.onlyTrans and not o.translation:
