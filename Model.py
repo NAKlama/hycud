@@ -61,10 +61,10 @@ class Model:
       m -= m % 10
       m /= 10
       n *= 10
-      t = "%09i" % (m * n)
+      t = "{:09n}".format(m * n)
       modelPath = path.join(t, modelPath)
     self.path        = path.join(opt.tmpPath, modelPath)
-    self.basename    = path.join(self.path, "%09i" % num)
+    self.basename    = path.join(self.path, "{:09n}".format(num))
     if not path.exists(self.basename):
       os.makedirs(self.basename)
     # self.pdb        = self.basename + '.pdb'

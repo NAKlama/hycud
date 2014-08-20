@@ -50,9 +50,16 @@ class CalcValues:
     return ret
 
   def recip(self):
-    ret     = CalcValues()
-    ret.r   = 1.0 / self.r
-    ret.hm  = 1.0 / self.hm
+    ret       = CalcValues()
+    if self.r != 0.0:
+      ret.r   = 1.0 / self.r
+    else:
+      ret.r   = 0.0
+    if self.hm != 0.0:
+      ret.hm  = 1.0 / self.hm
+    else:
+      ret.hm  = 0.0
+    return ret
 
   def out(self, prefix=""):
     print("{} r ={:e}".format(prefix, self.r))
@@ -130,7 +137,11 @@ class FragValues:
     ret             = FragValues()
     ret.values      = self.values.recip()
     ret.corrected   = self.corrected.recip()
-    ret.eta         = 1.0 / self.eta
+    if self.eta != 0.0:
+      ret.eta       = 1.0 / self.eta
+    else:
+      ret.eta       = 0.0
+    return ret
 
   def getEta(self):
     return self.eta
