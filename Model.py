@@ -504,7 +504,10 @@ class Models:
     for m in self.models:
       stat.addValue(m.transDiff)
 
-    self.transStats = {'avg': stat.getAvg(), 'stdDev': stat.getStdDev()}
+    self.transStats = {
+      'avg': stat.getAvg(),
+      'harmMe': stat.getHarmMe(),
+      'stdDev': stat.getStdDev()}
 
   def outputFragResults(self, opt):
     """Print per fragment statistics"""
@@ -537,10 +540,13 @@ class Models:
         item()
       i += 1
 
-  def outputTransFragResults(self):
+  def outputTransFragResults(self, opt):
+    avg = 'avg'
+    if opt.harmonicMean:
+      avg = 'harmMe'
     out = printFragStatVal(
       "Translational diffusion coefficient",
-      self.transStats['avg'],
+      self.transStats[avg],
       "cm2/s",
       self.transStats['stdDev'])
     out()

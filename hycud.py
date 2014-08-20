@@ -530,7 +530,7 @@ if __name__ == '__main__':
     models.populateFragStats()
   if o.translation:
     models.transStatisticss()
-    models.outputTransFragResults()
+    models.outputTransFragResults(o)
 
   # if o.fragDisAn:
   #   da.generateAnalysis()
