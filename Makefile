@@ -9,7 +9,7 @@ all: zip tar
 	echo ${PACKDIR}
 	-mkdir ${PACKDIR}
 	-cp *.py ${PACKDIR}
-	-cp -R Tools ${PACKDIR}
+	-cp -R tools ${PACKDIR}
 	-touch .packDirectory
 
 .PHONY: zip
