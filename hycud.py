@@ -32,7 +32,7 @@ default_niceness            = 20
 default_fragmentSize        = 14
 
 # Please don't change anything below this line
-version                     = "v3.0.7"
+version                     = "v3.0.8"
 
 
 class Options:
@@ -462,7 +462,6 @@ if __name__ == '__main__':
   if o.translation:
     models.transStatisticss()
     models.outputTransFragResults()
-    sys.exit(0)
 
   # if o.fragDisAn:
   #   da.generateAnalysis()
@@ -472,28 +471,41 @@ if __name__ == '__main__':
 
   if o.outDataTable != "":
     with io.open(o.outDataTable, "w", encoding='utf-8') as outTable:
-      outLine  = "                    "
-      outLine += "                 Center                   "
-      outLine += "\n"
-      outTable.write(outLine)
-      outLine  = " ModelNo    FragNo  "
-      outLine += "           X             Y             Z  "
-      outLine += "       eta  "
-      outLine += "      r-corr       hm-corr  "
-      outLine += "           r            hm  "
-      outLine += "\n"
-      outTable.write(outLine)
-      for m in models.models:
-        for f in m.fragments:
-          outLine  = "{:8n}  {:8n}  ".format(m.num, f.num)
-          center   = f.center.getCenter()
-          outLine += "{:12f}  {:12f}  {:12f}  ".format(center.x, center.y, center.z)
-          outLine += "{:10f}  ".format(f.values.eta)
-          outLine += "{:12e}  {:12e}  ".format(f.values.corrected.r, f.values.corrected.hm)
-          outLine += "{:12e}  {:12e}  ".format(f.values.values.r, f.values.values.hm)
-          outLine += "\n"
+      if not o.onlyTrans:
+        outLine  = "                    "
+        outLine += "                 Center                   "
+        outLine += "\n"
+        outTable.write(outLine)
+        outLine  = " ModelNo    FragNo  "
+        outLine += "           X             Y             Z  "
+        outLine += "       eta  "
+        outLine += "      r-corr       hm-corr  "
+        outLine += "           r            hm  "
+        outLine += "\n"
+        outTable.write(outLine)
+        for m in models.models:
+          for f in m.fragments:
+            outLine  = "{:8n}  {:8n}  ".format(m.num, f.num)
+            center   = f.center.getCenter()
+            outLine += "{:12f}  {:12f}  {:12f}  ".format(center.x, center.y, center.z)
+            outLine += "{:10f}  ".format(f.values.eta)
+            outLine += "{:12e}  {:12e}  ".format(f.values.corrected.r, f.values.corrected.hm)
+            outLine += "{:12e}  {:12e}  ".format(f.values.values.r, f.values.values.hm)
+            outLine += "\n"
+            outTable.write(outLine)
+      if o.translation and not o.onlyTrans:
+        outTable.write("\n")
+        outTable.write("\n")
+      if o.translation:
+        outLine = "{:>8s}  {:s}\n".format("ModelNo", "Trans. Diff. Coeff")
+        outTable.write(outLine)
+        for m in models.models:
+          outLine  = "{:8n}  ".format(m.num)
+          outLine += "{:12e}\n".format(m.transDiff)
           outTable.write(outLine)
 
+  if o.onlyTrans:
+    sys.exit(0)
   models.outputFragResults(o)
   models.calcStats()
   models.output(o)
