@@ -1,5 +1,54 @@
 #!/usr/bin/python3
 
+##################################################
+#                 Default values                 #
+#------------------------------------------------#
+# Please change these to make using hycud easier #
+##################################################
+
+# Default path to hydropro executable
+default_calcHydr            = "hydropro10-lnx.exe"
+
+# Default path to the REMO directory
+default_REMOdir             = "/nmr5/nare/programs/REMO"
+
+# Default number of threads to use for REMO execution
+#
+# NOTE: This will have the progress indicator for REMO skip around if
+#       increased. Progress indicator is only a rough approximation when
+#       multithreaded REMO execution is used
+default_threads             = 1
+
+# Default directory to create temporary storage directories in
+#
+# NOTE: For a machine with sufficient RAM, putting this onto a RAM-disk
+#       will speed up the splitting step significantly
+default_temporaryStorage    = "."
+
+# Default niceness
+#
+# NOTE: A high value decreases the priority of the programs HYCUD executes,
+#       allowing them to run in the background without disrupting other tasks
+#       Lowering this value will increase priority
+default_niceness            = 20
+
+# Default fragment size
+#
+# The input proteins will be split into equal fragments of this size, if no
+# Fragmentation was specified on the command line
+default_fragmentSize        = 14
+
+# Default template file
+#
+# This is the default name of the HydroPro Datafile used as a template
+# A simple filename will search for a file of that name in the directory
+# HYCUD was executed in, while an absolute path will make a specific file
+# the default template
+default_templateFile        = "hydropro.dat"
+
+##########################################################
+# Don't change anything below this line for normal usage #
+##########################################################
 import argparse
 import io
 import os
@@ -8,7 +57,6 @@ import tempfile
 import pickle
 import gzip
 import sys
-
 
 from os               import path
 from HelperFunctions  import checkPathExists, printError
@@ -19,19 +67,7 @@ from REMO             import sproutModels
 from HydroPro         import hydroPro
 from DataDump         import DataDump
 
-
-##################
-# Default values #
-##################
-default_calcHydr            = "hydropro10-lnx.exe"
-default_REMOdir             = "/nmr5/nare/programs/REMO"
-default_templateFile        = "hydropro.dat"
-default_threads             = 1
-default_temporaryStorage    = os.getcwd()
-default_niceness            = 20
-default_fragmentSize        = 14
-
-# Please don't change anything below this line
+default_temporaryStorage    = path.abspath(default_temporaryStorage)
 version                     = "v3.0.8"
 
 
@@ -51,10 +87,13 @@ class Options:
 #############################
 
 if __name__ == '__main__':
-  # Argument parser
+  # We use the options class to keep track of all options in one place
   o   = Options()
+
+  # Directory the program was called from
   cwd = os.getcwd()
   desc = "HYCUD {}".format(version)
+  # Argument parser
   argParser = argparse.ArgumentParser(description=desc, formatter_class=argparse.RawDescriptionHelpFormatter,
       epilog='''\
   MANUAL FRAGMENT SPECIFICATION (--fragments | -F)
@@ -172,12 +211,14 @@ if __name__ == '__main__':
       action="store_true",
       help="Display HYCUD version number")
 
+  # Convert arguments into a hash datastructure
   args = vars(argParser.parse_args())
 
   if args['version']:
     print("{}".format(version[1:]))
     sys.exit(0)
 
+  # Checking if multiple fragmentation specifications where given
   if args['fragSize'] != (-1) and (args['fragments'] != "" or args['detailedFrag']):
     msg = "Please do not specify fragments manually when using the --fragSize option."
     printError(msg)
@@ -189,6 +230,8 @@ if __name__ == '__main__':
   o.calcHydr  = path.abspath(args['exe'])
   o.REMOPath  = path.abspath(args['REMOdir'])
   o.runDir    = os.getcwd()
+
+  # Generate temprary directory
   if args['inData'] == "":
     checkPathExists(args['tmpDir'])
     o.tmpPath   = tempfile.mkdtemp(dir=path.abspath(args['tmpDir']), prefix="HYCUD_")
@@ -205,7 +248,7 @@ if __name__ == '__main__':
   else:
     fragSize = (-1)
 
-
+  # Writing the options into the Options clasee
   o.exePath       = path.abspath(args['exe'])
   o.keepTemp      = args['keepTempFiles']
   o.threads       = int(args['threads'])
@@ -230,9 +273,11 @@ if __name__ == '__main__':
   o.verbData      = args['outputAdditionalData']
   o.harmonicMean  = args['displayHarmonicMean']
 
+  # If we are only claculation translation, we swich on translation calculation
   if o.onlyTrans and not o.translation:
     o.translation = True
 
+  # Split the comma seperated list into a list of integers
   if args['removeModels'] != "":
     o.remove     = list(map(int, args['removeModels'].split(',')))
   else:
@@ -246,6 +291,7 @@ if __name__ == '__main__':
   if not o.verbose:
     o.verbose = 0
 
+  # Checking paths
   if o.inData == "":
     checkPathExists(o.exePath)
     checkPathExists(args['in'])
@@ -291,6 +337,7 @@ if __name__ == '__main__':
       for i in range(0, o.fragmentation.fragmentCount()):
         print(o.fragmentation.fragmentList(i))
 
+    # HydroPro calculation
     hydroPro(o, models)
     models.parseResults(o)
     if not o.onlyTrans:
@@ -364,9 +411,11 @@ if __name__ == '__main__':
   #   da.printAnalysis()
   #   sys.exit()
 
+  # --removeModels
   if len(o.remove) > 0:
     models = models.removeModels(o.remove)
 
+  # --inCount
   if len(o.inCount) > 0:
     o.inCount = o.inCount.split(':')
     o.inCount = list(map(int, o.inCount))
@@ -375,6 +424,7 @@ if __name__ == '__main__':
     else:
       models.subModels(o.inCount[0])
 
+  # --filterOutliers
   if o.filtOutl > 0.0:
     removedModels = []
     if o.filtOutl >= 1.0:
@@ -450,12 +500,14 @@ if __name__ == '__main__':
       models = models.removeModels(removeList)
       oldDev = newDev
 
+    # --outputOutliers
     if o.outpOutl:
       print("Removed Models: {}".format(removedModels))
 
   if o.verbose > 0:
     print("Number of models:        {:n}".format(models.size()))
 
+  # Calculate statistics
   if not o.onlyTrans:
     models.initFragStats(o)
     models.populateFragStats()
@@ -469,6 +521,7 @@ if __name__ == '__main__':
   #   da.printFragmentwiseAnalysis()
   #   sys.exit()
 
+  # --dumpDataTable
   if o.outDataTable != "":
     with io.open(o.outDataTable, "w", encoding='utf-8') as outTable:
       if not o.onlyTrans:
