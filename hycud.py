@@ -320,6 +320,10 @@ if __name__ == '__main__':
       data            = pickle.loads(inFile.read())
       o.fragmentation = data.frag
       models          = data.model
+      o.onlyTrans     = metaConvert(data.meta)['args']['translationOnly']
+      o.translation   = metaConvert(data.meta)['args']['translation']
+      if o.onlyTrans and not o.translation:
+        o.translation = True
     if vers2Num(metaConvert(data.meta)['multiHydroVersion']) < vers2Num("v2.3.0"):
       print("\nWARNING: The datafile has an old data format. Please use an older version to deccode it!\n")
     if o.inInfo:
