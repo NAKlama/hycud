@@ -26,10 +26,12 @@ from DataDump         import DataDump
 default_calcHydr            = "hydropro10-lnx.exe"
 default_REMOdir             = "/nmr5/nare/programs/REMO"
 default_templateFile        = "hydropro.dat"
+default_threads             = 1
 default_temporaryStorage    = os.getcwd()
 default_niceness            = 20
 default_fragmentSize        = 14
 
+# Please don't change anything below this line
 version                     = "v3.0.7"
 
 
@@ -100,11 +102,11 @@ if __name__ == '__main__':
       default=default_temporaryStorage, type=str,
       help="Directory for temporary files")
   argParser.add_argument('--threads', '-t',
-      default=1, type=int,
-      help="Number of threads to run REMO with (Default: 1)")
+      default=default_threads, type=int,
+      help="Number of threads to run REMO with (Default: {:n})".format(default_threads))
   argParser.add_argument('--nice',
       default=default_niceness, type=int,
-      help="Nice level to use (Default: 20)")
+      help="Nice level to use (Default: {:n})".format(default_niceness))
   argParser.add_argument('--translation',
       action='store_true',
       help="Calculate translational diffusion coefficient as well")
