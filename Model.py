@@ -123,6 +123,196 @@ class Models:
     self.fragStats  = None
     self.transStats = None
 
+  def parsePDT(self, opt, fileName):
+    """Function parsing the PDT file, spltting it int PDBs inside the temporary directory
+       and populating protein information"""
+    # Initializing the readThread class with the file to read
+    pTarget = readThread(fileName)
+
+    # Generating a Queue and passing it to the read thread, it will read up to
+    # 32 times the buffer size, and output a list of lines into q
+    q = Queue(32)
+    p = Process(target=pTarget, args=(q,))
+    p.start()
+
+    modelNo     = -1
+    gotRes      = 0
+    output      = None
+    # r           = 1
+
+    # Initialize variable line with first line
+    if opt.verbose > 0:
+      print("Parsing PDT input file and splitting into seperate models")
+    lines = q.get()
+    # As long as we do not encounter an empty set of lines (indicates EOF)
+    while len(lines) > 0:
+      for line in lines:
+        line  = removeChainIDs(line)
+
+        # Testing for 'MODEL' line
+        res   = modelParser.match(line)
+        if res:
+          # r = 1
+          modelNo = int(res.group(1))
+          model   = Model(opt, modelNo)
+          self.models.append(model)
+
+          # Here we are initiailizing the output thread, with a queue of 1024 lines
+          oQ = Queue(1024)
+          oT = writeThread(model.getPDB())
+          oP = Process(target=oT, args=(oQ,))
+          oP.start()
+          output = "Thread"
+
+        # Testing for 'ENDMDL' line
+        res = endmdlParser.match(line)
+        if res:
+          if output is not None:
+            # Making sure everything has been written into the file
+            oQ.put(None)
+            oP.join()
+            output = None
+            modelNo = -1
+
+        # As long we are inside a model
+        if modelNo > 0:
+          pdbMatch = pdbResParser.match(line)
+          if pdbMatch:
+            # prefix    = pdbMatch.group(1)
+            resNum    = int(pdbMatch.group(2))
+            # postfix   = string.rstrip(pdbMatch.group(3))
+
+            if gotRes < resNum:  # i.e. first atom of new Residue
+              gotRes = resNum
+              opt.resCount += 1
+
+            # Write the pdbLine into the output file
+            oQ.put(line)
+          else:
+            # Catching invalid PDB atom lines and warning about them
+            # this is only a problem if all atoms of a residue can not
+            # be parsed by the previous parser
+            atomMatch = atomParser.match(line)
+            if atomMatch:
+              oQ.put(line)
+              printWarning("Could not parse the following line:")
+              print(line)
+
+      # Read next line to process
+      lines = q.get()
+
+    p.join()
+    gc.collect()
+
+  def splitFragments(self, opt):
+    """This function splits each protein model into fragments as defined by *opt.fragmentation*"""
+    # firstFrag = opt.fragmentation.firstFragment
+    # fragments = opt.fragmentation.fragments
+    fragDef = opt.fragmentation
+    self.fragmentation = fragDef
+    REMOpdt = ["REMARK REMO processed version of {}\n".format(opt.pdt)]
+
+    for m in self.models:
+      if opt.verbose > 0:
+        print("{0}2K{0}1GNow splitting fragments for model {1:6n}/{2:n}".format(
+          ANSI_ESC(), m.num, len(self.models)), end='')
+        flush()
+
+      script  = []
+      script.append("#!/bin/bash\n")
+      script.append("cd {}\n".format(m.basename))
+      script.append("cat > tmp.pl << EOF\n")
+      script.append("#!/usr/bin/perl\n")
+      script.append("\\$fragR = 0; \\$fragV = 0;\n")
+      script.append("while(<>){\n")
+      script.append(" if(/^\\s+This\\sfile\\s*:\\s+(\\S+)-res.txt/) {\n")
+      script.append("  \\$frag = \\$1; }\n")
+      script.append(" if(/^\\s+Radius\\sof\\sgyration:\\s+(\\S+)/) {\n")
+      script.append("  print \"{:09n}.\\$frag  Stokes:  \\$1\\n\"; }}\n".format(m.num))
+      script.append(" if(/^\\s+Intrinsic\\sviscosity:\\s+(\\S+)\\s+cm/) {\n")
+      script.append("  print \"{:09n}.\\$frag  Viscos:  \\$1\\n\"; }}\n".format(m.num))
+      script.append(" if(/^\\s+Harm.*time:\\s+(\\S+)/) {\n")
+      script.append("  print \"{:09n}.\\$frag  HarmMe:  \\$1\\n\"; }}\n".format(m.num))
+      script.append("}\nEOF\n")
+      script.append("chmod +x tmp.pl\n")
+
+      REMOpdt.append("MODEL {:n}\n".format(m.num))
+
+      with io.open(m.getSprouted(), mode='r', encoding='utf-8') as pdbInFile:
+    #     currRes       = 1
+    #     currFrag      = 0
+    #     fragSum       = firstFrag + fragments[currFrag].num
+    #     static        = fragments[currFrag].static
+        pdbLines      = pdbInFile.readlines()
+        for line in pdbLines:
+          REMOpdt.append(line)
+        for frag in range(0, fragDef.fragmentCount()):
+          fragment      = m.addFrag(frag)
+          static        = fragDef.fragments[frag].static
+          pdbOut        = []
+          for line in pdbLines:
+            pdbMatch = pdbParser.match(line)
+            if pdbMatch:
+              # atomNum   = int(pdbMatch.group(1))
+              atomName  = pdbMatch.group(2).strip()
+              resName   = pdbMatch.group(3).strip()
+              resNum    = int(pdbMatch.group(4))
+              atomX     = float(pdbMatch.group(5))
+              atomY     = float(pdbMatch.group(6))
+              atomZ     = float(pdbMatch.group(7))
+
+              if fragDef.partOfFragment(frag, resNum):
+                fragment.addAtom(atomName, resNum, resName, Point3D(atomX, atomY, atomZ))
+                pdbOut.append(line)
+
+          opt.HydroConf[1]          = "{}\n".format(fragment.basename)
+          opt.HydroConf[2]          = "{}.pdb\n".format(fragment.basename)
+          opt.HydroConf[10]         = "{:f}\n".format(fragment.getWeight())
+
+          with io.open(fragment.getDat(), mode='w', encoding='utf-8') as confOutFile:
+            confOutFile.writelines(opt.HydroConf)
+
+          with io.open(fragment.getPDB(), mode='w', encoding='utf-8') as pdbOutFile:
+            pdbOutFile.writelines(pdbOut)
+
+          if static:
+            script.append("echo \"{:09n}.{}  Stokes:  0.0\" >> {}\n".format(m.num, fragment.basename, m.getResult()))
+            script.append("echo \"{:09n}.{}  Viscos:  {:e}\"  >> {}\n".format(m.num, fragment.basename, fragDef.fragments[frag].viscos, m.getResult()))
+            script.append("echo \"{:09n}.{}  HarmMe:  {:e}\"  >> {}\n".format(m.num, fragment.basename, fragDef.fragments[frag].HarmMe, m.getResult()))
+          else:
+            script.append("ln -fs {} hydropro.dat\n".format(fragment.getDat()))
+            script.append("{} > /dev/null 2>&1\n".format(opt.exePath))
+            script.append("./tmp.pl < {}/{}-res.txt >> {}\n".format(m.basename, fragment.basename, m.getResult()))
+
+      REMOpdt.append("ENDMDL\n")
+
+      if not opt.keepTemp:
+        script.append("rm -Rf tmp.pl\n")
+      if opt.verbose > 3:
+        print("Finishing off script...", end='')
+      script.append("cd ..\n")
+      if not opt.keepTemp:
+        script.append("rm -Rf {}\n".format(m.basename))
+        script.append("rm -Rf {}.pdb\n".format(m.basename))
+
+      scriptOutFile = "{}.script".format(m.basename)
+      with io.open(scriptOutFile, mode='w') as scriptOut:
+        scriptOut.writelines(script)
+
+      os.system("chmod +x {}".format(scriptOutFile))
+      m.script = scriptOutFile
+      m.doneParsing()
+      gc.collect()
+      if opt.verbose > 3:
+        print("done")
+
+    if opt.verbose > 0:
+      print("")
+    if opt.REMOout != "":
+      with open(opt.REMOout, "w") as REMOoutFile:
+        REMOoutFile.writelines(REMOpdt)
+
+
   def translationalDiff(self, opt):
     for m in self.models:
       script = []
@@ -247,86 +437,11 @@ class Models:
         fragI.values.uncorrectedWeight  = fragI.values.values.mult(fragI.getWeight())
         fragI.values.uncorrectedProtons = fragI.values.values.mult(fragI.getProtons())
 
-  def parsePDT(self, opt, fileName):
-    """Function parsing the PDT file, spltting it int PDBs inside the temporary directory
-       and populating protein information"""
-    # Initializing the readThread class with the file to read
-    pTarget = readThread(fileName)
+  def initFragStats(self, o):
+    self.fragStats = FragmentStatistics(o)
 
-    # Generating a Queue and passing it to the read thread, it will read up to
-    # 32 times the buffer size, and output a list of lines into q
-    q = Queue(32)
-    p = Process(target=pTarget, args=(q,))
-    p.start()
-
-    modelNo     = -1
-    gotRes      = 0
-    output      = None
-    # r           = 1
-
-    # Initialize variable line with first line
-    if opt.verbose > 0:
-      print("Parsing PDT input file and splitting into seperate models")
-    lines = q.get()
-    # As long as we do not encounter an empty set of lines (indicates EOF)
-    while len(lines) > 0:
-      for line in lines:
-        line  = removeChainIDs(line)
-
-        # Testing for 'MODEL' line
-        res   = modelParser.match(line)
-        if res:
-          # r = 1
-          modelNo = int(res.group(1))
-          model   = Model(opt, modelNo)
-          self.models.append(model)
-
-          # Here we are initiailizing the output thread, with a queue of 1024 lines
-          oQ = Queue(1024)
-          oT = writeThread(model.getPDB())
-          oP = Process(target=oT, args=(oQ,))
-          oP.start()
-          output = "Thread"
-
-        # Testing for 'ENDMDL' line
-        res = endmdlParser.match(line)
-        if res:
-          if output is not None:
-            # Making sure everything has been written into the file
-            oQ.put(None)
-            oP.join()
-            output = None
-            modelNo = -1
-
-        # As long we are inside a model
-        if modelNo > 0:
-          pdbMatch = pdbResParser.match(line)
-          if pdbMatch:
-            # prefix    = pdbMatch.group(1)
-            resNum    = int(pdbMatch.group(2))
-            # postfix   = string.rstrip(pdbMatch.group(3))
-
-            if gotRes < resNum:  # i.e. first atom of new Residue
-              gotRes = resNum
-              opt.resCount += 1
-
-            # Write the pdbLine into the output file
-            oQ.put(line)
-          else:
-            # Catching invalid PDB atom lines and warning about them
-            # this is only a problem if all atoms of a residue can not
-            # be parsed by the previous parser
-            atomMatch = atomParser.match(line)
-            if atomMatch:
-              oQ.put(line)
-              printWarning("Could not parse the following line:")
-              print(line)
-
-      # Read next line to process
-      lines = q.get()
-
-    p.join()
-    gc.collect()
+  def populateFragStats(self):
+    self.fragStats.populate(self)
 
   def calcStats(self):
     self.statsExist = True
@@ -376,120 +491,6 @@ class Models:
     outSumm("Uncorrected","harmonic mean time ","(Mol Weight)             ",self.HMuW.getAvg() ,"s    ",self.HMuW.getStdDev())
     outSumm("Normalised ","harmonic mean time ","(non-exchangable protons)",self.HMcP.getAvg() ,"s    ",self.HMcP.getStdDev())
     outSumm("Uncorrected","harmonic mean time ","(non-exchangable protons)",self.HMuP.getAvg() ,"s    ",self.HMuP.getStdDev())
-
-  def splitFragments(self, opt):
-    """This function splits each protein model into fragments as defined by *opt.fragmentation*"""
-    # firstFrag = opt.fragmentation.firstFragment
-    # fragments = opt.fragmentation.fragments
-    fragDef = opt.fragmentation
-    self.fragmentation = fragDef
-    REMOpdt = ["REMARK REMO processed version of {}\n".format(opt.pdt)]
-
-    for m in self.models:
-      if opt.verbose > 0:
-        print("{0}2K{0}1GNow splitting fragments for model {1:6n}/{2:n}".format(
-          ANSI_ESC(), m.num, len(self.models)), end='')
-        flush()
-
-      script  = []
-      script.append("#!/bin/bash\n")
-      script.append("cd {}\n".format(m.basename))
-      script.append("cat > tmp.pl << EOF\n")
-      script.append("#!/usr/bin/perl\n")
-      script.append("\\$fragR = 0; \\$fragV = 0;\n")
-      script.append("while(<>){\n")
-      script.append(" if(/^\\s+This\\sfile\\s*:\\s+(\\S+)-res.txt/) {\n")
-      script.append("  \\$frag = \\$1; }\n")
-      script.append(" if(/^\\s+Radius\\sof\\sgyration:\\s+(\\S+)/) {\n")
-      script.append("  print \"{:09n}.\\$frag  Stokes:  \\$1\\n\"; }}\n".format(m.num))
-      script.append(" if(/^\\s+Intrinsic\\sviscosity:\\s+(\\S+)\\s+cm/) {\n")
-      script.append("  print \"{:09n}.\\$frag  Viscos:  \\$1\\n\"; }}\n".format(m.num))
-      script.append(" if(/^\\s+Harm.*time:\\s+(\\S+)/) {\n")
-      script.append("  print \"{:09n}.\\$frag  HarmMe:  \\$1\\n\"; }}\n".format(m.num))
-      script.append("}\nEOF\n")
-      script.append("chmod +x tmp.pl\n")
-
-      REMOpdt.append("MODEL {:n}\n".format(m.num))
-
-      with io.open(m.getSprouted(), mode='r', encoding='utf-8') as pdbInFile:
-    #     currRes       = 1
-    #     currFrag      = 0
-    #     fragSum       = firstFrag + fragments[currFrag].num
-    #     static        = fragments[currFrag].static
-        pdbLines      = pdbInFile.readlines()
-        for line in pdbLines:
-          REMOpdt.append(line)
-        for frag in range(0, fragDef.fragmentCount()):
-          fragment      = m.addFrag(frag)
-          static        = fragDef.fragments[frag].static
-          pdbOut        = []
-          for line in pdbLines:
-            pdbMatch = pdbParser.match(line)
-            if pdbMatch:
-              # atomNum   = int(pdbMatch.group(1))
-              atomName  = pdbMatch.group(2).strip()
-              resName   = pdbMatch.group(3).strip()
-              resNum    = int(pdbMatch.group(4))
-              atomX     = float(pdbMatch.group(5))
-              atomY     = float(pdbMatch.group(6))
-              atomZ     = float(pdbMatch.group(7))
-
-              if fragDef.partOfFragment(frag, resNum):
-                fragment.addAtom(atomName, resNum, resName, Point3D(atomX, atomY, atomZ))
-                pdbOut.append(line)
-
-          opt.HydroConf[1]          = "{}\n".format(fragment.basename)
-          opt.HydroConf[2]          = "{}.pdb\n".format(fragment.basename)
-          opt.HydroConf[10]         = "{:f}\n".format(fragment.getWeight())
-
-          with io.open(fragment.getDat(), mode='w', encoding='utf-8') as confOutFile:
-            confOutFile.writelines(opt.HydroConf)
-
-          with io.open(fragment.getPDB(), mode='w', encoding='utf-8') as pdbOutFile:
-            pdbOutFile.writelines(pdbOut)
-
-          if static:
-            script.append("echo \"{:09n}.{}  Stokes:  0.0\" >> {}\n".format(m.num, fragment.basename, m.getResult()))
-            script.append("echo \"{:09n}.{}  Viscos:  {:e}\"  >> {}\n".format(m.num, fragment.basename, fragDef.fragments[frag].viscos, m.getResult()))
-            script.append("echo \"{:09n}.{}  HarmMe:  {:e}\"  >> {}\n".format(m.num, fragment.basename, fragDef.fragments[frag].HarmMe, m.getResult()))
-          else:
-            script.append("ln -fs {} hydropro.dat\n".format(fragment.getDat()))
-            script.append("{} > /dev/null 2>&1\n".format(opt.exePath))
-            script.append("./tmp.pl < {}/{}-res.txt >> {}\n".format(m.basename, fragment.basename, m.getResult()))
-
-      REMOpdt.append("ENDMDL\n")
-
-      if not opt.keepTemp:
-        script.append("rm -Rf tmp.pl\n")
-      if opt.verbose > 3:
-        print("Finishing off script...", end='')
-      script.append("cd ..\n")
-      if not opt.keepTemp:
-        script.append("rm -Rf {}\n".format(m.basename))
-        script.append("rm -Rf {}.pdb\n".format(m.basename))
-
-      scriptOutFile = "{}.script".format(m.basename)
-      with io.open(scriptOutFile, mode='w') as scriptOut:
-        scriptOut.writelines(script)
-
-      os.system("chmod +x {}".format(scriptOutFile))
-      m.script = scriptOutFile
-      m.doneParsing()
-      gc.collect()
-      if opt.verbose > 3:
-        print("done")
-
-    if opt.verbose > 0:
-      print("")
-    if opt.REMOout != "":
-      with open(opt.REMOout, "w") as REMOoutFile:
-        REMOoutFile.writelines(REMOpdt)
-
-  def initFragStats(self, o):
-    self.fragStats = FragmentStatistics(o)
-
-  def populateFragStats(self):
-    self.fragStats.populate(self)
 
   def transStatisticss(self):
     """This function does the translational statistics"""
