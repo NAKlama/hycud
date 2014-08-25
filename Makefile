@@ -3,7 +3,7 @@ PACKDIR =hycud-${VERSION}
 TARFILE =hycud-${VERSION}.tar
 
 .DEFAULT: all
-all: zip tar
+all: clean zip tar
 
 .packDirectory:
 	echo ${PACKDIR}
