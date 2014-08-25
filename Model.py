@@ -465,20 +465,24 @@ class Models:
     self.HMuP  = StatItem()  # protons
     for m in self.models:
       for f in m.fragments:
-        v = f.values
-        w = f.getWeight()
-        p = f.getProtons()
-        self.Rsum.addValue( v.corrected.r)
-        self.HMsum.addValue(v.corrected.hm)
-        self.eta.addValue(  v.eta)
-        self.RcW.addValue(  v.corrected.r  * w, w)
-        self.RuW.addValue(  v.values.r     * w, w)
-        self.RcP.addValue(  v.corrected.r  * p, p)
-        self.RuP.addValue(  v.values.r     * p, p)
-        self.HMcW.addValue( v.corrected.hm * w, w)
-        self.HMuW.addValue( v.values.hm    * w, w)
-        self.HMcP.addValue( v.corrected.hm * p, p)
-        self.HMuP.addValue( v.values.hm    * p, p)
+        w   = f.getWeight()
+        p   = f.getProtons()
+        r   = f.values.getR(corr=False)
+        rC  = f.values.getR(corr=True)
+        hm  = f.values.getHM(corr=False)
+        hmC = f.values.getHM(corr=True)
+        eta = f.values.getEta()
+        self.Rsum.addValue( rC)
+        self.HMsum.addValue(hmC)
+        self.eta.addValue(  eta)
+        self.RcW.addValue(  rC  * w, w)
+        self.RuW.addValue(  r   * w, w)
+        self.RcP.addValue(  rC  * p, p)
+        self.RuP.addValue(  r   * p, p)
+        self.HMcW.addValue( hmC * w, w)
+        self.HMuW.addValue( hm  * w, w)
+        self.HMcP.addValue( hmC * p, p)
+        self.HMuP.addValue( hm  * p, p)
 
   def output(self, opt):
     if not self.statsExist:
