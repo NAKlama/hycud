@@ -55,6 +55,22 @@ default_templateFile        = "hydropro.dat"
 #allow_HydroPro_MultiTreaded = True
 allow_HydroPro_MultiTreaded = False
 
+# HYCUD calculates the values displayed in the seciont 'SUMMARY' weighted by
+# molecular weight or non exchangable protons. By default these values are not
+# displayed, and since this isn't often needed, the option to display these values
+# is hidden by default
+#
+# By setting the option to True (like in the commented line below) an option will
+# be shown that will then display these weighted values
+#allow_option_weighted_averages = True
+allow_option_weighted_averages = False
+
+# By setting this option to True, these weighted averages will be shown by default
+# The previous option will be ignored in that case.
+#default_show_weighted_averages = True
+default_show_weighted_averages = False
+
+
 ##########################################################
 # Don't change anything below this line for normal usage #
 ##########################################################
@@ -77,7 +93,7 @@ from HydroPro         import hydroPro
 from DataDump         import DataDump
 
 default_temporaryStorage    = path.abspath(default_temporaryStorage)
-version                     = "v3.1.0"
+version                     = "v3.2.0"
 
 
 class Options:
@@ -220,6 +236,10 @@ if __name__ == '__main__':
   argParser.add_argument('--displayHarmonicMean',
       action='store_true',
       help="Instead of arithmetric averages display harmonic means")
+  if allow_option_weighted_averages and not default_show_weighted_averages:
+    argParser.add_argument('--displayWeightedAverages',
+      action='store_true',
+      help="Display extra averages, weighted by weight or non exchangeable protons in the summary")
   argParser.add_argument('--version',
       action="store_true",
       help="Display HYCUD version number")
@@ -285,6 +305,10 @@ if __name__ == '__main__':
   o.outDataTable  = args['dumpDataTable']
   o.verbData      = args['outputAdditionalData']
   o.harmonicMean  = args['displayHarmonicMean']
+  if allow_option_weighted_averages and not default_show_weighted_averages:
+    o.showWeightedAvg = args['displayWeightedAverages']
+  else:
+    o.showWeightedAvg = default_show_weighted_averages
   if allow_HydroPro_MultiTreaded:
     o.hydroMT     = args['hydroProThreads']
   else:

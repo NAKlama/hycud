@@ -432,11 +432,6 @@ class Models:
 
         fragI.values.corrected   = fragI.values.values.mult(commonSum)
 
-        fragI.values.correctedWeight    = fragI.values.corrected.mult(fragI.getWeight())
-        fragI.values.correctedProtons   = fragI.values.corrected.mult(fragI.getProtons())
-        fragI.values.uncorrectedWeight  = fragI.values.values.mult(fragI.getWeight())
-        fragI.values.uncorrectedProtons = fragI.values.values.mult(fragI.getProtons())
-
   # def calculateWeightingFactorsMT(self, opt):
   #   from MTFunctions import calcWeightFact
   #   from multiprocessing import Pool
@@ -475,32 +470,34 @@ class Models:
         self.Rsum.addValue( rC)
         self.HMsum.addValue(hmC)
         self.eta.addValue(  eta)
-        self.RcW.addValue(  rC  * w, w)
-        self.RuW.addValue(  r   * w, w)
-        self.RcP.addValue(  rC  * p, p)
-        self.RuP.addValue(  r   * p, p)
-        self.HMcW.addValue( hmC * w, w)
-        self.HMuW.addValue( hm  * w, w)
-        self.HMcP.addValue( hmC * p, p)
-        self.HMuP.addValue( hm  * p, p)
+        self.RcW.addValue(  rC , w)
+        self.RuW.addValue(  r  , w)
+        self.RcP.addValue(  rC , p)
+        self.RuP.addValue(  r  , p)
+        self.HMcW.addValue( hmC, w)
+        self.HMuW.addValue( hm , w)
+        self.HMcP.addValue( hmC, p)
+        self.HMuP.addValue( hm , p)
 
   def output(self, opt):
     if not self.statsExist:
       self.calcStats()
     print("\n--- S U M M A R Y ---")
-    if(opt.verbData):
+    if opt.verbData :
       outSumm("Normalised ","radius             ","                         ",self.Rsum.getAvg() ,"cm   ",self.Rsum.getStdDev())
     outSumm(  "Normalised ","harmonic mean time ","                         ",self.HMsum.getAvg(),"s    ",self.HMsum.getStdDev())
-    if(opt.verbData):
+    if opt.verbData:
       outSumm("Normalised ","intrinsic viscosity","                         ",self.eta.getAvg()  ,"cm3/g",self.eta.getStdDev())
-      outSumm("Normalised ","radius             ","(Mol Weight)             ",self.RcW.getAvg()  ,"cm   ",self.RcW.getStdDev())
-      outSumm("Uncorrected","radius             ","(Mol Weight)             ",self.RuW.getAvg()  ,"cm   ",self.RuW.getStdDev())
-      outSumm("Normalised ","radius             ","(non-exchangable protons)",self.RcP.getAvg()  ,"cm   ",self.RcP.getStdDev())
-      outSumm("Uncorrected","radius             ","(non-exchangable protons)",self.RuP.getAvg()  ,"cm   ",self.RuP.getStdDev())
-    outSumm(  "Normalised ","harmonic mean time ","(Mol Weight)             ",self.HMcW.getAvg() ,"s    ",self.HMcW.getStdDev())
-    outSumm(  "Uncorrected","harmonic mean time ","(Mol Weight)             ",self.HMuW.getAvg() ,"s    ",self.HMuW.getStdDev())
-    outSumm(  "Normalised ","harmonic mean time ","(non-exchangable protons)",self.HMcP.getAvg() ,"s    ",self.HMcP.getStdDev())
-    outSumm(  "Uncorrected","harmonic mean time ","(non-exchangable protons)",self.HMuP.getAvg() ,"s    ",self.HMuP.getStdDev())
+      if opt.showWeightedAvg:
+        outSumm("Normalised ","radius             ","(Mol Weight)             ",self.RcW.getAvg()  ,"cm   ",self.RcW.getStdDev())
+        outSumm("Uncorrected","radius             ","(Mol Weight)             ",self.RuW.getAvg()  ,"cm   ",self.RuW.getStdDev())
+        outSumm("Normalised ","radius             ","(non-exchangable protons)",self.RcP.getAvg()  ,"cm   ",self.RcP.getStdDev())
+        outSumm("Uncorrected","radius             ","(non-exchangable protons)",self.RuP.getAvg()  ,"cm   ",self.RuP.getStdDev())
+    if opt.showWeightedAvg:
+      outSumm(  "Normalised ","harmonic mean time ","(Mol Weight)             ",self.HMcW.getAvg() ,"s    ",self.HMcW.getStdDev())
+      outSumm(  "Uncorrected","harmonic mean time ","(Mol Weight)             ",self.HMuW.getAvg() ,"s    ",self.HMuW.getStdDev())
+      outSumm(  "Normalised ","harmonic mean time ","(non-exchangable protons)",self.HMcP.getAvg() ,"s    ",self.HMcP.getStdDev())
+      outSumm(  "Uncorrected","harmonic mean time ","(non-exchangable protons)",self.HMuP.getAvg() ,"s    ",self.HMuP.getStdDev())
 
   def transStatisticss(self):
     """This function does the translational statistics"""
