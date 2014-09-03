@@ -17,8 +17,3 @@ def calcWeightFact(m):
 
     fragI.values.corrected   = fragI.values.values.mult(commonSum)
 
-    fragI.values.correctedWeight    = fragI.values.corrected.mult(fragI.getWeight())
-    fragI.values.correctedProtons   = fragI.values.corrected.mult(fragI.getProtons())
-    fragI.values.uncorrectedWeight  = fragI.values.values.mult(fragI.getWeight())
-    fragI.values.uncorrectedProtons = fragI.values.values.mult(fragI.getProtons())
-
