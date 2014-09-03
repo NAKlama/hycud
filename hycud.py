@@ -20,7 +20,7 @@ from HydroPro         import hydroPro
 from DataDump         import DataDump
 
 default_temporaryStorage    = path.abspath(default_temporaryStorage)
-version                     = "v3.2.0"
+version                     = "v3.2.1"
 
 
 class Options:
