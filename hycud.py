@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from Options import all
+from Options import *
 import argparse
 import io
 import os
@@ -20,7 +20,7 @@ from HydroPro         import hydroPro
 from DataDump         import DataDump
 
 default_temporaryStorage    = path.abspath(default_temporaryStorage)
-version                     = "v3.2.1"
+version                     = "v3.2.2"
 
 
 class Options:

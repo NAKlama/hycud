@@ -484,20 +484,20 @@ class Models:
       self.calcStats()
     print("\n--- S U M M A R Y ---")
     if opt.verbData :
-      outSumm("Normalised ","radius             ","                         ",self.Rsum.getAvg() ,"cm   ",self.Rsum.getStdDev())
-    outSumm(  "Normalised ","harmonic mean time ","                         ",self.HMsum.getAvg(),"s    ",self.HMsum.getStdDev())
+      outSumm("Average corrected  ","radius             ","                               ",self.Rsum.getAvg() ,"cm   ",self.Rsum.getStdDev())
+    outSumm(  "Average corrected  ","harmonic mean time ","                               ",self.HMsum.getAvg(),"s    ",self.HMsum.getStdDev())
     if opt.verbData:
-      outSumm("Normalised ","intrinsic viscosity","                         ",self.eta.getAvg()  ,"cm3/g",self.eta.getStdDev())
+      outSumm("Average            ","intrinsic viscosity","                               ",self.eta.getAvg()  ,"cm3/g",self.eta.getStdDev())
       if opt.showWeightedAvg:
-        outSumm("Normalised ","radius             ","(Mol Weight)             ",self.RcW.getAvg()  ,"cm   ",self.RcW.getStdDev())
-        outSumm("Uncorrected","radius             ","(Mol Weight)             ",self.RuW.getAvg()  ,"cm   ",self.RuW.getStdDev())
-        outSumm("Normalised ","radius             ","(non-exchangable protons)",self.RcP.getAvg()  ,"cm   ",self.RcP.getStdDev())
-        outSumm("Uncorrected","radius             ","(non-exchangable protons)",self.RuP.getAvg()  ,"cm   ",self.RuP.getStdDev())
+        outSumm("Average corrected  ","radius             ","(Norm: Mol Weight)             ",self.RcW.getAvg()  ,"cm   ",self.RcW.getStdDev())
+        outSumm("Average uncorrected","radius             ","(Norm: Mol Weight)             ",self.RuW.getAvg()  ,"cm   ",self.RuW.getStdDev())
+        outSumm("Average corrected  ","radius             ","(Norm: non-exchangable protons)",self.RcP.getAvg()  ,"cm   ",self.RcP.getStdDev())
+        outSumm("Average uncorrected","radius             ","(Norm: non-exchangable protons)",self.RuP.getAvg()  ,"cm   ",self.RuP.getStdDev())
     if opt.showWeightedAvg:
-      outSumm(  "Normalised ","harmonic mean time ","(Mol Weight)             ",self.HMcW.getAvg() ,"s    ",self.HMcW.getStdDev())
-      outSumm(  "Uncorrected","harmonic mean time ","(Mol Weight)             ",self.HMuW.getAvg() ,"s    ",self.HMuW.getStdDev())
-      outSumm(  "Normalised ","harmonic mean time ","(non-exchangable protons)",self.HMcP.getAvg() ,"s    ",self.HMcP.getStdDev())
-      outSumm(  "Uncorrected","harmonic mean time ","(non-exchangable protons)",self.HMuP.getAvg() ,"s    ",self.HMuP.getStdDev())
+      outSumm(  "Average corrected  ","harmonic mean time ","(Norm: Mol Weight)             ",self.HMcW.getAvg() ,"s    ",self.HMcW.getStdDev())
+      outSumm(  "Average uncorrected","harmonic mean time ","(Norm: Mol Weight)             ",self.HMuW.getAvg() ,"s    ",self.HMuW.getStdDev())
+      outSumm(  "Average corrected  ","harmonic mean time ","(Norm: non-exchangable protons)",self.HMcP.getAvg() ,"s    ",self.HMcP.getStdDev())
+      outSumm(  "Average uncorrected","harmonic mean time ","(Norm: non-exchangable protons)",self.HMuP.getAvg() ,"s    ",self.HMuP.getStdDev())
 
   def transStatisticss(self):
     """This function does the translational statistics"""

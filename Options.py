@@ -52,7 +52,7 @@ default_templateFile        = "hydropro.dat"
 #
 # On machines with many cores, activating this will give you an option to
 # run several instances of HydroPro in parallel
-#allow_HydroPro_MultiTreaded = True
+# allow_HydroPro_MultiTreaded = True
 allow_HydroPro_MultiTreaded = False
 
 # HYCUD calculates the values displayed in the seciont 'SUMMARY' weighted by
@@ -62,12 +62,12 @@ allow_HydroPro_MultiTreaded = False
 #
 # By setting the option to True (like in the commented line below) an option will
 # be shown that will then display these weighted values
-#allow_option_weighted_averages = True
+# allow_option_weighted_averages = True
 allow_option_weighted_averages = False
 
 # By setting this option to True, these weighted averages will be shown by default
 # The previous option will be ignored in that case.
-#default_show_weighted_averages = True
+# default_show_weighted_averages = True
 default_show_weighted_averages = False
 
 # HYCUD can work in daemon mode. This mode is normally deactivates, but can be
