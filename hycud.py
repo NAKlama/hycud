@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 
+import sys
+
+# Find customized Options.py in home directory
+sys.path.insert(0, "~/.hycud")
+
 from Options import *
 import argparse
 import io
@@ -8,7 +13,6 @@ import os
 import tempfile
 import pickle
 import gzip
-import sys
 
 from os               import path
 from HelperFunctions  import checkPathExists, printError

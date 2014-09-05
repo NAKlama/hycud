@@ -1,9 +1,13 @@
 #!/usr/bin/python3
 
+# DO NOT CHANGE THE NEXT LINE
+options_ver = 'v3.2.2'
+
 ##################################################
-#                 Default values                 #
+#          Default values and options            #
 #------------------------------------------------#
-# Please change these to make using hycud easier #
+# Please copy this file to ~/.hycud to keep      #
+# your custom options between updates.           #
 ##################################################
 
 # Default path to hydropro executable
