@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # DO NOT CHANGE THE NEXT LINE!
-options_ver = 'v3.2.2'
+options_ver = 'v3.3.0'
 
 ##################################################
 #          Default values and options            #
@@ -82,3 +82,4 @@ allow_option_daemon_mode = False
 daemon_db_user = "User"
 daemon_db_pass = "Password"
 daemon_db_db   = "DB_name"
+daemon_db_host = "localhost"
