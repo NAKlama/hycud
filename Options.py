@@ -83,3 +83,7 @@ daemon_db_user = "User"
 daemon_db_pass = "Password"
 daemon_db_db   = "DB_name"
 daemon_db_host = "localhost"
+
+# DB storage Mode
+# db_mode = 'filesystem'
+db_mode = 'mysql'

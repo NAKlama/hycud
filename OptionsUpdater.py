@@ -21,6 +21,7 @@ def updateUserOptions():
 		optFile = open("~/.hycud/Options.py", "a", encoding='utf-8')
 
 		if version < vers2Num('v3.3.0'):
-			optFile.write('daemon_db_host = "localhost"\n')
+			optFile.write('daemon_db_host = "localhost"\n\n')
+			optFile.write("# DB storage Mode\n# db_mode = 'filesystem'\ndb_mode = 'mysql'\n")
 
 		optFile.close()
