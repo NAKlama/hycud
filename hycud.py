@@ -25,10 +25,10 @@ from DataDump         import DataDump
 from OptionsUpdater   import updateUserOptions
 
 default_temporaryStorage    = path.abspath(default_temporaryStorage)
-version                     = "v3.3.0"
+version                     = "v3.3.1"
 
 if vers2Num(options_ver) < vers2Num(version):
-  updateUserOptions()
+  updateUserOptions(version)
 
 class Options:
   """This class holds all options defined on the command line,

@@ -15,7 +15,7 @@ bracketParser      = re.compile("^\\(([^\\(\\)]+)\\)(.*)$")
 atomExtractor      = re.compile("^\\d*([HCNOPS])\\w*\\d*$")
 dataParser         = re.compile("^\\(([vVhHtT].*),([vVhHtT].*)\\)$")
 
-optVerParser			 = re.compile("^\s*opttions_ver\s+=\s+'(v\d+\.\d+\.\d+)'\s+$")
+optVerParser			 = re.compile("^\\s*options_ver\\s+=\\s+'(v\\d+\\.\\d+\\.\\d+)'\\s+$")
 
 
 pattern  = "^\\s*(-?\\d\\.\\d+[eE][-+]\\d+)"
