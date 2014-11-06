@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 
 import sys
+from os               import path
 
 # Find customized Options.py in home directory
-sys.path.insert(0, "~/.hycud")
+sys.path.insert(0, path.expanduser("~/.hycud"))
 
 from Options import *
 import argparse
@@ -14,7 +15,6 @@ import tempfile
 import pickle
 import gzip
 
-from os               import path
 from HelperFunctions  import checkPathExists, printError
 from HelperFunctions  import vers2Num, metaConvert
 from Model            import Models
@@ -85,7 +85,7 @@ if __name__ == '__main__':
       default=default_calcHydr, type=str,
       help="Executable file to use")
   argParser.add_argument('--REMOdir', '-R',
-      default="", type=str,
+      default=default_REMOdir, type=str,
       help="Path to the REMO directory")
   argParser.add_argument('--NoREMO',
       action='store_true',

@@ -37,6 +37,10 @@ class Fragment:
     self.center.addPoint(resNum, weight, point)
     self.protein.addResidue(resNum, resName)
     self.atomCount   += 1
+    if atomName == "N":
+      self.protein.setNpos(resNum, point)
+    if atomName == "CA":
+      self.protein.setCApos(resNum, point)
 
   def getWeight(self):
     return self.protein.getWeight()

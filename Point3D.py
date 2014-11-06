@@ -41,6 +41,17 @@ class Point3D:
     self.y += p.y
     self.z += p.z
 
+  def sub(self, p):
+    return Point3D( x=(self.x - p.x)
+                  , y=(self.y - p.y)
+                  , z=(self.z - p.z)
+                  )
+
+  def subTo(self, p):
+    self.x -= p.x
+    self.y -= p.y
+    self.z -= p.z
+
   def div(self, n):
     return Point3D( x=(self.x / n)
                   , y=(self.y / n)

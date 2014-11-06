@@ -38,6 +38,26 @@ class Residue:
     self.res      = res
     self.weight   = residueWeight(res)
     self.protons  = residueProtons(res)
+    self.bbNpos   = None
+    self.bbCApos  = None
+    self.NCvect   = None
+
+  def getNCvect(self):
+    if self.NCvect is not None:
+      return self.NCvect
+    if self.bbNpos is None or self.bbCApos is None:
+      return None
+    else:
+      self.NCvect = self.bbNpos.sub(self.bbCApos)
+      return self.NCvect
+
+  def setNpos(self, point):
+    if self.bbNpos is not None:
+      self.bbNpos = point
+
+  def setCApos(self, point):
+    if self.bbCApos is not None:
+      self.bbCApos = point
 
 
 class Protein:
@@ -64,4 +84,22 @@ class Protein:
     return self.protons
 
   def done(self):
-    self.residues = []
+    pass
+    # self.residues = []
+
+  def setNpos(self, res, point):
+    for r in self.residues:
+      if r.num == res:
+        r.setNpos(point)
+
+  def setCApos(self, res, point):
+    for r in self.residues:
+      if r.num == res:
+        r.setCApos(point)
+
+  def getNCvect(self, res):
+    for r in self.residues:
+      if r.num == res:
+        return r.getNCvect()
+    return None
+
