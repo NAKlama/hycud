@@ -16,3 +16,13 @@ atomExtractor      = re.compile("^\\d*([HCNOPS])\\w*\\d*$")
 dataParser         = re.compile("^\\(([vVhHtT].*),([vVhHtT].*)\\)$")
 
 optVerParser			 = re.compile("^\s*opttions_ver\s+=\s+'(v\d+\.\d+\.\d+)'\s+$")
+
+
+pattern  = "^\\s*(-?\\d\\.\\d+[eE][-+]\\d+)"
+pattern += "\\s+(-?\\d\\.\\d+[eE][-+]\\d+)"
+pattern += "\\s+(-?\\d\\.\\d+[eE][-+]\\d+)"
+pattern += "\\s+(-?\\d\\.\\d+[eE][-+]\\d+)"
+pattern += "\\s+(-?\\d\\.\\d+[eE][-+]\\d+)"
+pattern += "\\s+(-?\\d\\.\\d+[eE][-+]\\d+)\\s*$"
+diffMatrixParser	 = re.compile(pattern)
+

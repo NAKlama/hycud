@@ -1,7 +1,7 @@
 import os
 import io
 import re
-import string
+# import string
 import gc
 # import math
 
@@ -13,6 +13,7 @@ from HelperFunctions    import ANSI_ESC, flush
 from StatItem           import StatItem
 from Parsers            import modelParser, endmdlParser
 from Parsers            import atomParser, pdbResParser, pdbParser
+from Parsers            import diffMatrixParser
 from Point3D            import Point3D
 
 
@@ -233,6 +234,8 @@ class Models:
       script.append("  print \"{:09n}.\\$frag  Viscos:  \\$1\\n\"; }}\n".format(m.num))
       script.append(" if(/^\\s+Harm.*time:\\s+(\\S+)/) {\n")
       script.append("  print \"{:09n}.\\$frag  HarmMe:  \\$1\\n\"; }}\n".format(m.num))
+      script.append(" if(/^\\s*(-?\\d\\.\\d+[eE][-+]\\d+\\s+.*)\\s*$/) {\n")
+      script.append("  print \"{:09n}.\\$frag Mat:  \\$1 \\$2 \\$3 \\$4 \\$5 \\$6\n\"; }}\n".format(m.num))
       script.append("}\nEOF\n")
       script.append("chmod +x tmp.pl\n")
 
@@ -354,6 +357,7 @@ class Models:
     stokesParser = re.compile("^(\\d+)\\.Frag(\\d+)\\s+Stokes:\\s+(\\S+)\\s*$")
     harmMeParser = re.compile("^(\\d+)\\.Frag(\\d+)\\s+HarmMe:\\s+(\\S+)\\s*$")
     viscosParser = re.compile("^(\\d+)\\.Frag(\\d+)\\s+Viscos:\\s+(\\S+)\\s*$")
+    matrixParser = re.compile("^(\\d+)\\.Frag(\\d+)\\s+Mat:\\s+(.*)\\s*$")
     translParser = re.compile("^(\\d+)\\s+Trans:\\s+(\\S+)\\s*$")
 
     for m in self.models:
@@ -410,8 +414,25 @@ class Models:
                   parsed = True
                   fragment.calcValues(viscosity=eta)
 
+            res = matrixParser.match(line)
+            if res:
+              frag    = int(res.group(2))
+              matStr  = res.group(3)
+              matRes  = diffMatrixParser.match(matStr)
+              if matRes:
+                for fragment in m.fragments:
+                  if fragment.num == frag:
+                    parsed = True
+                    fragment.diffMat.append([ matRes.group(1)
+                                            , matRes.group(2)
+                                            , matRes.group(3)
+                                            , matRes.group(4)
+                                            , matRes.group(5)
+                                            , matRes.group(6)
+                                            ])
+
             if not parsed:
-              printWarning("Could not parse line: \"{}\"".format(string.strip(line)))
+              printWarning("Could not parse line: \"{}\"".format(line.strip()))
 
   def calculateWeightingFactors(self, opt):
     """This function calculates the weighting due to fragment distances"""

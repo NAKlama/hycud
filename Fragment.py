@@ -28,6 +28,7 @@ class Fragment:
     self.resCenters   = []
     self.stat         = FragStatistics()
     self.atomCount    = 0
+    self.diffMat      = []
 
   def calcValues(self, viscosity=0.0, HarmMe=0.0, radius=0.0):
     self.values.calcValues(viscosity=viscosity, HarmMe=HarmMe, radius=radius)
