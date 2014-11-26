@@ -1,5 +1,23 @@
 #!/usr/bin/python3
 
+# HYCUD
+# Copyright (C) 2014 Klama, Frederik and Rezaei-Ghaleh, Nasrollah
+#
+# This file is part of HYCUD.
+#
+# HYCUD is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HYCUD is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HYCUD.  If not, see <http://www.gnu.org/licenses/>.
+
 import sys
 from os               import path
 
@@ -14,6 +32,8 @@ import os
 import tempfile
 import pickle
 import gzip
+import numpy as np
+from time import sleep
 
 from HelperFunctions  import checkPathExists, printError
 from HelperFunctions  import vers2Num, metaConvert
@@ -23,9 +43,10 @@ from REMO             import sproutModels
 from HydroPro         import hydroPro
 from DataDump         import DataDump
 from OptionsUpdater   import updateUserOptions
+from sdfAnalysis      import sdfAnalysis
 
 default_temporaryStorage    = path.abspath(default_temporaryStorage)
-version                     = "v3.3.1"
+version                     = "v3.4.5"
 
 if vers2Num(options_ver) < vers2Num(version):
   updateUserOptions(version)
@@ -170,6 +191,12 @@ if __name__ == '__main__':
   argParser.add_argument('--displayHarmonicMean',
       action='store_true',
       help="Instead of arithmetric averages display harmonic means")
+  argParser.add_argument('--spectralDensityFunction', '--sdf',
+      action="store_true",
+      help="Calculate spectral density function")
+  argParser.add_argument('--sdfResidueSkip',
+      default=1, type=int,
+      help="Reduce Calculation time by skipping more than one residue in fragmentation")
   if allow_option_weighted_averages and not default_show_weighted_averages:
     argParser.add_argument('--displayWeightedAverages',
       action='store_true',
@@ -216,29 +243,31 @@ if __name__ == '__main__':
     fragSize = (-1)
 
   # Writing the options into the Options clasee
-  o.exePath       = path.abspath(args['exe'])
-  o.keepTemp      = args['keepTempFiles']
-  o.threads       = int(args['threads'])
-  o.nice          = args['nice']
-  o.skipREMO      = args['NoREMO']
-  o.outData       = args['outData']
-  o.inData        = args['inData']
-  o.convert       = args['convertToNewDataformat']
-  o.inCount       = args['inCount']
-  o.inInfo        = args['inInfo']
-  o.detailFrag    = args['detailedFrag']
-  o.REMOout       = args['REMOout']
-  o.pdt           = args['pdt']
-  # o.distAnaly     = args['analyseDistribution']
-  # o.fragDisAn     = args['analyseFragmentDistribution']
-  # o.distAnSt      = args['distributionStep']
-  o.filtOutl      = args['filterOutliers']
-  o.outpOutl      = args['outputOutliers']
-  o.translation   = args['translation']
-  o.onlyTrans     = args['translationOnly']
-  o.outDataTable  = args['dumpDataTable']
-  o.verbData      = args['outputAdditionalData']
-  o.harmonicMean  = args['displayHarmonicMean']
+  o.exePath         = path.abspath(args['exe'])
+  o.keepTemp        = args['keepTempFiles']
+  o.threads         = int(args['threads'])
+  o.nice            = args['nice']
+  o.skipREMO        = args['NoREMO']
+  o.outData         = args['outData']
+  o.inData          = args['inData']
+  o.convert         = args['convertToNewDataformat']
+  o.inCount         = args['inCount']
+  o.inInfo          = args['inInfo']
+  o.detailFrag      = args['detailedFrag']
+  o.REMOout         = args['REMOout']
+  o.pdt             = args['pdt']
+  # o.distAnaly       = args['analyseDistribution']
+  # o.fragDisAn       = args['analyseFragmentDistribution']
+  # o.distAnSt        = args['distributionStep']
+  o.filtOutl        = args['filterOutliers']
+  o.outpOutl        = args['outputOutliers']
+  o.translation     = args['translation']
+  o.onlyTrans       = args['translationOnly']
+  o.outDataTable    = args['dumpDataTable']
+  o.verbData        = args['outputAdditionalData']
+  o.harmonicMean    = args['displayHarmonicMean']
+  o.sdfResidueSkip  = args['sdfResidueSkip']
+  o.sdf             = args['spectralDensityFunction']
   if allow_option_weighted_averages and not default_show_weighted_averages:
     o.showWeightedAvg = args['displayWeightedAverages']
   else:
@@ -260,8 +289,9 @@ if __name__ == '__main__':
 
   o.fragSize   = fragSize
 
-  o.verbose   = args['verbose']
-  o.keepTemp  = args['keepTempFiles']
+  o.verbose     = args['verbose']
+  o.keepTemp    = args['keepTempFiles']
+  o.sdfPartial  = sdf_partial_fragments
 
   if not o.verbose:
     o.verbose = 0
@@ -276,26 +306,57 @@ if __name__ == '__main__':
   else:
     checkPathExists(o.inData)
 
-  # Hydropro configuration file -> memory
-  o.HydroConf       = []
-  with io.open(args['in']) as template:
-    lines = template.readlines()
-    for line in lines:
-      o.HydroConf.append(line)
 
   if o.inData == "":
+    # Hydropro configuration file -> memory
+    o.HydroConf       = []
+    with io.open(args['in']) as template:
+      lines = template.readlines()
+      for line in lines:
+        o.HydroConf.append(line)
+
     # Parse PDT and initialize models list
     models = Models()
     models.parsePDT(o, args['pdt'])
 
-    # Determine fragmentation
     o.fragmentation = Fragmentation(o)
-    if args['fragments'] != "":
-      o.fragmentation.fragDef(args['fragments'])
-    elif args['detailedFrag'] != "":
-      o.fragmentation.detailedFrag(args['detailedFrag'])
+    if o.sdf:
+      o.skipREMO = True
+      fSize = o.fragSize
+      skip  = o.sdfResidueSkip
+      start = 1
+      end   = models.maxRes
+      if skip > 1:
+        fSizeDiv =  [ d for d in range(2,fSize//2+1) if fSize % d == 0 ]
+        if skip not in fSizeDiv:
+          print ( "WARNING: The value selected for skipping ("
+                + str(skip)
+                + ") is not a divisor of fragment size ("
+                + str(fSize)
+                + ")" )
+          print ( "         Values for different residues will be calculated from "
+                + "different number of fragments.")
+          print ( "         This means that values are not as consistent over "
+                + "different residues.")
+          sleep(3)
+        if skip > 3:
+          print ( "WARNING: Using very high skip values reduces accuracy significantly.")
+          sleep(2)
+        if (fSize / skip) <= 2:
+          print ( "WARNING: With a skip this high, residues will only be found is very "
+                + "few fragments.")
+          print ( "         Please check your options. If you really want this, please "
+                + "wait for 15s.")
+          sleep(15)
+      o.fragmentation.sdfFrags(start, end, fSize, skip)
     else:
-      o.fragmentation.fragSize(fragSize)
+      # Determine fragmentation
+      if args['fragments'] != "":
+        o.fragmentation.fragDef(args['fragments'])
+      elif args['detailedFrag'] != "":
+        o.fragmentation.detailedFrag(args['detailedFrag'])
+      else:
+        o.fragmentation.fragSize(fragSize)
 
     # Use sprouting tool to make sure we have a full protein
     if not o.skipREMO:
@@ -344,6 +405,9 @@ if __name__ == '__main__':
       models          = data.model
       o.onlyTrans     = metaConvert(data.meta)['args']['translationOnly']
       o.translation   = metaConvert(data.meta)['args']['translation']
+      o.fragSize      = metaConvert(data.meta)['args']['fragSize']
+      if metaConvert(data.meta)['args']['spectralDensityFunction'] and o.fragSize == -1:
+        o.fragSize = default_fragmentSize
       if o.onlyTrans and not o.translation:
         o.translation = True
     if vers2Num(metaConvert(data.meta)['multiHydroVersion']) < vers2Num("v2.3.0"):
@@ -369,6 +433,13 @@ if __name__ == '__main__':
           outFragment.HarmMe = frag.HarmMe
           o.fragmentation.fragments.append(outFragment)
 
+      if vers2Num(metaConvert(data.meta)['multiHydroVersion']) < vers2Num("v3.4.0"):
+        for m in models:
+          for f in m.fragments:
+            for c in f.center.centerList:
+              d = c.center
+              c.center = np.array([d.x, d.y, d.z])
+
       dataNew = DataDump(o.fragmentation, models, version)
       for m in data.meta:
         print("{!r}".format(m))
@@ -376,6 +447,15 @@ if __name__ == '__main__':
           dataNew.meta.append(m)
       with gzip.GzipFile(o.outData, "wb", 9) as outFile:
         outFile.write(pickle.dumps(dataNew, -1))
+
+
+  if o.sdf:
+    models.calculateWeightingFactors(o)
+    sdf = sdfAnalysis(models, o.sdfResidueSkip, o.fragSize, o.verbose)
+    sdf.calc()
+    sdf.average()
+    sdf.output()
+    sys.exit(0)
 
 
 
@@ -515,7 +595,7 @@ if __name__ == '__main__':
           for f in m.fragments:
             outLine  = "{:8n}  {:8n}  ".format(m.num, f.num)
             center   = f.center.getCenter()
-            outLine += "{:12f}  {:12f}  {:12f}  ".format(center.x, center.y, center.z)
+            outLine += "{:12f}  {:12f}  {:12f}  ".format(center[0], center[1], center[2])
             outLine += "{:10f}  ".format(f.values.eta)
             outLine += "{:12e}  {:12e}  ".format(f.values.corrected.r, f.values.corrected.hm)
             outLine += "{:12e}  {:12e}  ".format(f.values.values.r, f.values.values.hm)

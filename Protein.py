@@ -1,3 +1,22 @@
+# HYCUD
+# Copyright (C) 2014 Klama, Frederik and Rezaei-Ghaleh, Nasrollah
+#
+# This file is part of HYCUD.
+#
+# HYCUD is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HYCUD is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HYCUD.  If not, see <http://www.gnu.org/licenses/>.
+
+
 from HelperFunctions import printError
 
 
@@ -39,25 +58,25 @@ class Residue:
     self.weight   = residueWeight(res)
     self.protons  = residueProtons(res)
     self.bbNpos   = None
-    self.bbCApos  = None
+    self.bbHpos   = None
     self.NCvect   = None
 
-  def getNCvect(self):
+  def getNHvect(self):
     if self.NCvect is not None:
       return self.NCvect
-    if self.bbNpos is None or self.bbCApos is None:
+    if self.bbNpos is None or self.bbHpos is None:
       return None
     else:
-      self.NCvect = self.bbNpos.sub(self.bbCApos)
+      self.NCvect = self.bbHpos - self.bbNpos
       return self.NCvect
 
   def setNpos(self, point):
-    if self.bbNpos is not None:
+    if self.bbNpos is None:
       self.bbNpos = point
 
-  def setCApos(self, point):
-    if self.bbCApos is not None:
-      self.bbCApos = point
+  def setHpos(self, point):
+    if self.bbHpos is None:
+      self.bbHpos = point
 
 
 class Protein:
@@ -92,14 +111,13 @@ class Protein:
       if r.num == res:
         r.setNpos(point)
 
-  def setCApos(self, res, point):
+  def setHpos(self, res, point):
     for r in self.residues:
       if r.num == res:
-        r.setCApos(point)
+        r.setHpos(point)
 
-  def getNCvect(self, res):
+  def getNHvect(self, res):
     for r in self.residues:
       if r.num == res:
-        return r.getNCvect()
+        return r.getNHvect()
     return None
-

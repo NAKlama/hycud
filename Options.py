@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # DO NOT CHANGE THE NEXT LINE!
-options_ver = 'v3.3.1'
+options_ver = 'v3.4.3'
 
 ##################################################
 #          Default values and options            #
@@ -87,3 +87,8 @@ daemon_db_host = "localhost"
 # DB storage Mode
 # db_mode = 'filesystem'
 db_mode = 'mysql'
+
+# In the spectral density function mode, should we try and use partial fragments
+# for calculating the correction factor?
+# Don't change unless you know what you are doing!
+sdf_partial_fragments = True

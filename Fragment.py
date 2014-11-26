@@ -1,3 +1,22 @@
+# HYCUD
+# Copyright (C) 2014 Klama, Frederik and Rezaei-Ghaleh, Nasrollah
+#
+# This file is part of HYCUD.
+#
+# HYCUD is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HYCUD is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HYCUD.  If not, see <http://www.gnu.org/licenses/>.
+
+
 from os import path
 
 from FragValues       import FragValues
@@ -18,7 +37,7 @@ class FragStatistics:
 
 class Fragment:
   """Class describing fragments"""
-  def __init__(self, num, modelPath):
+  def __init__(self, num, modelPath, partial):
     self.num          = num
     self.basename     = "Frag{:04n}".format(num)
     self.basepath     = path.join(modelPath, self.basename)
@@ -28,26 +47,36 @@ class Fragment:
     self.resCenters   = []
     self.stat         = FragStatistics()
     self.atomCount    = 0
+    self.residues     = []
     self.diffMat      = []
+    self.partial      = partial
 
   def calcValues(self, viscosity=0.0, HarmMe=0.0, radius=0.0):
     self.values.calcValues(viscosity=viscosity, HarmMe=HarmMe, radius=radius)
 
   def addAtom(self, atomName, resNum, resName, point):
     weight = atomWeight(atomName)
-    self.center.addPoint(resNum, weight, point)
+    self.center.addPoint(resNum, weight, point=point)
     self.protein.addResidue(resNum, resName)
     self.atomCount   += 1
-    if atomName == "N":
-      self.protein.setNpos(resNum, point)
-    if atomName == "CA":
-      self.protein.setCApos(resNum, point)
+    if resNum not in self.residues:
+      self.residues.append(resNum)
+    if resNum > 1:
+      if atomName.strip() == "N":
+        self.protein.setNpos(resNum, point)
+      if atomName.strip() == "H":
+        self.protein.setHpos(resNum, point)
 
   def getWeight(self):
     return self.protein.getWeight()
 
   def getProtons(self):
     return self.protein.getProtons()
+
+  def hasResidue(self, num):
+    if num in self.residues:
+      return True
+    return False
 
   def getCenter(self):
     return self.center.getCenter()

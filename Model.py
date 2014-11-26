@@ -1,8 +1,28 @@
+# HYCUD
+# Copyright (C) 2014 Klama, Frederik and Rezaei-Ghaleh, Nasrollah
+#
+# This file is part of HYCUD.
+#
+# HYCUD is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HYCUD is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HYCUD.  If not, see <http://www.gnu.org/licenses/>.
+
+
 import os
 import io
 import re
 # import string
 import gc
+import copy
 # import math
 
 from os import path
@@ -14,7 +34,14 @@ from StatItem           import StatItem
 from Parsers            import modelParser, endmdlParser
 from Parsers            import atomParser, pdbResParser, pdbParser
 from Parsers            import diffMatrixParser
-from Point3D            import Point3D
+import numpy as np
+
+# Linear algebra functions from scipy are using BLAS and are faster
+# so we try them before using numpy as a fallback
+try:
+  import scipy.linalg as linalg
+except ImportError:
+  import numpy.linalg as linalg
 
 
 class readThread:
@@ -74,8 +101,8 @@ class Model:
     self.transScript = ""
     # self.result     = self.basename + '.result'
 
-  def addFrag(self, num):
-    frag = Fragment(num, self.basename)
+  def addFrag(self, num, partial=False):
+    frag = Fragment(num, self.basename, partial)
     self.fragments.append(frag)
     return frag
 
@@ -123,6 +150,8 @@ class Models:
     self.statsExist = False
     self.fragStats  = None
     self.transStats = None
+    self.maxRes     = 0
+    self.residues   = []
 
   def parsePDT(self, opt, fileName):
     """Function parsing the PDT file, spltting it int PDBs inside the temporary directory
@@ -187,6 +216,11 @@ class Models:
               gotRes = resNum
               opt.resCount += 1
 
+            if resNum > self.maxRes:
+              self.maxRes = resNum
+            if resNum not in self.residues:
+              self.residues.append(resNum)
+
             # Write the pdbLine into the output file
             oQ.put(line)
           else:
@@ -250,7 +284,7 @@ class Models:
         for line in pdbLines:
           REMOpdt.append(line)
         for frag in range(0, fragDef.fragmentCount()):
-          fragment      = m.addFrag(frag)
+          fragment      = m.addFrag(frag, fragDef.fragments[frag].partial)
           static        = fragDef.fragments[frag].static
           pdbOut        = []
           for line in pdbLines:
@@ -265,7 +299,10 @@ class Models:
               atomZ     = float(pdbMatch.group(7))
 
               if fragDef.partOfFragment(frag, resNum):
-                fragment.addAtom(atomName, resNum, resName, Point3D(atomX, atomY, atomZ))
+                # if atomName.strip() == "N":
+                #   print(line)
+                #   print(atomX, atomY, atomZ, np.array([atomX, atomY, atomZ], np.float64))
+                fragment.addAtom(atomName, resNum, resName, np.array([atomX, atomY, atomZ], np.float64))
                 pdbOut.append(line)
 
           opt.HydroConf[1]          = "{}\n".format(fragment.basename)
@@ -438,20 +475,73 @@ class Models:
     """This function calculates the weighting due to fragment distances"""
     for m in self.models:
       for fragI in m.fragments:
-        i         = fragI.num
-        commonSum = 0
-        cj  = 10
-        cj /= 36.12
-        centerI = fragI.center.getCenter()
-        for fragJ in m.fragments:
-          j = fragJ.num
-          if i != j:
-            centerJ = fragJ.center.getCenter()
-            rij = centerI.dist(centerJ)
-            commonSum += ((cj * fragJ.getWeight())) / (rij ** 3) * fragJ.getEta()
-        commonSum += 1
+        if not fragI.partial:
+          i         = fragI.num
+          commonSum = 0
+          cj  = 10
+          cj /= 36.12
+          centerI = fragI.center.getCenter()
+          consideredFragments = []
+          if opt.sdf:
+            for frag in m.fragments:
+              if not frag.partial and frag.num % opt.fragSize == i % opt.fragSize:
+                consideredFragments.append(frag)
+            if opt.sdfPartial:
+              # Consiering the beginning
+              normBegFrag = min(fragI.residues)
+              while normBegFrag > 0:
+                normBegFrag -= opt.fragSize
+              normBegFrag += opt.fragSize
+              if opt.verbose > 4:
+                print("F =", fragI.num, end='')
+                print("   B:", normBegFrag, end='')
+              if normBegFrag >= opt.fragSize / 2:
+                for f in m.fragments:
+                  if f.partial and max(f.residues) == normBegFrag - 1:
+                    consideredFragments.append(f)
+                    if opt.verbose > 4:
+                      print(" add", f.residues, end='')
 
-        fragI.values.corrected   = fragI.values.values.mult(commonSum)
+              # Considering the end
+              normEndFrag = max(fragI.residues)
+              while normEndFrag - 1 < self.maxRes:
+                normEndFrag += opt.fragSize
+              normEndFrag -= opt.fragSize
+              if opt.verbose > 4:
+                print("   E:", normEndFrag, "  ", end='')
+              if self.maxRes - normEndFrag >= opt.fragSize / 2:
+                for f in m.fragments:
+                  if f.partial and min(f.residues) == normEndFrag + 1:
+                    consideredFragments.append(f)
+                    if opt.verbose > 4:
+                      print("add", f.residues, end='')
+              if opt.verbose > 4:
+                print("")
+          else:
+            for frag in m.fragments:
+              if not frag.partial:
+                consideredFragments.append(frag)
+
+          # print("{:d}: fCount:{:d}".format(i, len(consideredFragments)), end="")
+          fragI.adjFragCount = len(consideredFragments)
+          for fragJ in consideredFragments:
+            j = fragJ.num
+            if i != j:
+              centerJ = fragJ.center.getCenter()
+              rij = linalg.norm(centerI - centerJ)
+              # print("\n   i: ", centerI, " j: ", centerJ,
+              #       " rij:", rij,
+              #       " cj:", cj,
+              #       " wj:", fragJ.getWeight(),
+              #       " eta:", fragJ.getEta(),
+              #       " cs:", ((cj * fragJ.getWeight())) / (rij ** 3) * fragJ.getEta()
+              #       ,end="")
+              commonSum += ((cj * fragJ.getWeight())) / (rij ** 3) * fragJ.getEta()
+          commonSum += 1
+          # print(" \n   cs+1:", commonSum)
+
+          fragI.values.corrected   = fragI.values.values.mult(commonSum)
+          fragI.weightingFactor    = commonSum
 
   # def calculateWeightingFactorsMT(self, opt):
   #   from MTFunctions import calcWeightFact

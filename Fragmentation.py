@@ -1,3 +1,22 @@
+# HYCUD
+# Copyright (C) 2014 Klama, Frederik and Rezaei-Ghaleh, Nasrollah
+#
+# This file is part of HYCUD.
+#
+# HYCUD is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HYCUD is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HYCUD.  If not, see <http://www.gnu.org/licenses/>.
+
+
 import string
 import sys
 
@@ -8,10 +27,15 @@ from Parsers          import fragmentSpecParser, valueExtractor
 
 class FragmentDefinition:
   """This class describes a single fragment"""
-  def __init__(self, rangesString=None, begin=0, count=0, valuesSetStr=None):
-    self.static = False
-    self.viscos = 0.0
-    self.HarmMe = 0.0
+  def __init__( self, rangesString=None,
+                begin=0, count=0,
+                valuesSetStr=None,
+                partial=False):
+    self.static   = False
+    self.viscos   = 0.0
+    self.HarmMe   = 0.0
+    self.partial  = partial
+    self.begin    = begin
     if valuesSetStr is not None:
       dMatch = dataParser.match(valuesSetStr)
       if dMatch:
@@ -187,6 +211,28 @@ class Fragmentation:
       self.fragments.append(FragmentDefinition(
         rangesString=rangeOut[:-1],
         valuesSetStr=values))
+
+  def sdfFrags(self, start, end, size, skip):
+    """Fragmentation for the spectral density function calculation"""
+    for i in range(start, end - size + 2, skip):
+      self.fragments.append(FragmentDefinition(begin=i, count=size))
+
+    for i in range(0, size):
+      if i < size / 2:
+        # print("Fstart: {}  {}".format(start, size-i-1))
+        self.fragments.append(FragmentDefinition(
+          begin=start,
+          count=size - i - 1 ,
+          partial=True))
+
+    for i in range(0, size):
+      if i < size / 2:
+        begin = end - ((end+1) % size) + i
+        # print("Fend:   {}  {}".format(begin, end-begin))
+        self.fragments.append(FragmentDefinition(
+          begin=begin,
+          count=end - begin,
+          partial=True))
 
   def fragmentCount(self):
     return len(self.fragments)
