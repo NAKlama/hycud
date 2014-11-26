@@ -70,10 +70,10 @@ class sdfAnalysis:
           rhn     = 1.02e-10              # m
           h       = 6.62606896e-34        # J s
           u0      = 4 * pi * 1e-7         # uo = Bo/H; H = A/m; uo = T m/A
-          csaN    = 170e-6                # CSA of 15N
+          csaN    = -170e-6               # CSA of 15N
           B0      = wh * 2e6 * pi / Gh
-          dd      = -math.sqrt(0.1) * (u0/(4*pi))*(h/(2*pi))*Gn*Gh / rhn**3
-          cc      = -math.sqrt(2.15) * csaN * B0 * Gn
+          dd      = -math.sqrt(1/10) * (u0/(4*pi))*(h/(2*pi))*Gn*Gh / rhn**3
+          cc      = -math.sqrt(2/15) * csaN * B0 * Gn
           wn      = wh * -(Gn / Gh)
           f       = np.array([0, wn, wh-wn, wh, wh+wn])
           w       = (2e6 * pi * f)**2
