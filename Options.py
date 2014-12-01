@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # DO NOT CHANGE THE NEXT LINE!
-options_ver = 'v3.4.3'
+options_ver = 'v3.4.6'
 
 ##################################################
 #          Default values and options            #
@@ -92,3 +92,7 @@ db_mode = 'mysql'
 # for calculating the correction factor?
 # Don't change unless you know what you are doing!
 sdf_partial_fragments = True
+
+# For the spectral density function, the larmor frequency is needed, you can set
+# the default here
+larmor_freq_proton = 600.25

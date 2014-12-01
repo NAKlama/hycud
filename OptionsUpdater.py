@@ -52,6 +52,11 @@ def updateUserOptions(progVersion):
 			lines.append("# Don't change unless you know what you are doing!\n")
 			lines.append('sdf_partial_fragments = True\n')
 
+		if fileVersion < vers2Num('v3.4.6'):
+			lines.append('\n# For the spectral density function, the larmor frequency is needed, you can set\n')
+			lines.append('# the default here\n')
+			lines.append('larmor_freq_proton = 600.25\n')
+
 		with open(userOptFile, "w", encoding='utf-8') as optFile:
 			for l in lines:
 				optFile.write(l)

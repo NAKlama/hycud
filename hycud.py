@@ -44,9 +44,10 @@ from HydroPro         import hydroPro
 from DataDump         import DataDump
 from OptionsUpdater   import updateUserOptions
 from sdfAnalysis      import sdfAnalysis
+from sdfMinimize      import sdfMinimize
 
 default_temporaryStorage    = path.abspath(default_temporaryStorage)
-version                     = "v3.4.5"
+version                     = "v3.4.6"
 
 if vers2Num(options_ver) < vers2Num(version):
   updateUserOptions(version)
@@ -59,6 +60,10 @@ class Options:
     self.debug      = 0
     self.resCount   = 0
 
+try:
+  default_larmor = larmor_freq_proton
+except NameError:
+  default_larmor = 600.25
 
 #############################
 #                           #
@@ -194,9 +199,15 @@ if __name__ == '__main__':
   argParser.add_argument('--spectralDensityFunction', '--sdf',
       action="store_true",
       help="Calculate spectral density function")
+  argParser.add_argument('--spectralDensityFunctionFit', '--sdfFit',
+      default="", type=str,
+      help="Fit spectral density function to input data")
   argParser.add_argument('--sdfResidueSkip',
       default=1, type=int,
       help="Reduce Calculation time by skipping more than one residue in fragmentation")
+  argParser.add_argument('--larmorFreq',
+      default=default_larmor, type=float,
+      help="Set the larmor frequency in MHz (needed for spectral density function)")
   if allow_option_weighted_averages and not default_show_weighted_averages:
     argParser.add_argument('--displayWeightedAverages',
       action='store_true',
@@ -268,6 +279,8 @@ if __name__ == '__main__':
   o.harmonicMean    = args['displayHarmonicMean']
   o.sdfResidueSkip  = args['sdfResidueSkip']
   o.sdf             = args['spectralDensityFunction']
+  o.sdfFit          = args['spectralDensityFunctionFit']
+  o.larmorFreq      = args['larmorFreq']
   if allow_option_weighted_averages and not default_show_weighted_averages:
     o.showWeightedAvg = args['displayWeightedAverages']
   else:
@@ -276,6 +289,9 @@ if __name__ == '__main__':
     o.hydroMT     = args['hydroProThreads']
   else:
     o.hydroMT     = 1
+
+  if len(o.sdfFit) > 0 and not o.sdf:
+    o.sdf = True
 
   # If we are only claculation translation, we swich on translation calculation
   if o.onlyTrans and not o.translation:
@@ -448,13 +464,21 @@ if __name__ == '__main__':
       with gzip.GzipFile(o.outData, "wb", 9) as outFile:
         outFile.write(pickle.dumps(dataNew, -1))
 
+  # --removeModels
+  if len(o.remove) > 0:
+    models = models.removeModels(o.remove)
 
+  # Specral Density Function
   if o.sdf:
     models.calculateWeightingFactors(o)
-    sdf = sdfAnalysis(models, o.sdfResidueSkip, o.fragSize, o.verbose)
-    sdf.calc()
-    sdf.average()
-    sdf.output()
+    if len(o.sdfFit) == 0:
+      sdf = sdfAnalysis(o, models, o.larmorFreq)
+      sdf.calc()
+      sdf.average()
+      sdf.output()
+    else:
+      o.models = models
+      sdf = sdfMinimize(o, o.sdfFit)
     sys.exit(0)
 
 
@@ -466,9 +490,6 @@ if __name__ == '__main__':
   #   da.printAnalysis()
   #   sys.exit()
 
-  # --removeModels
-  if len(o.remove) > 0:
-    models = models.removeModels(o.remove)
 
   # --inCount
   if len(o.inCount) > 0:

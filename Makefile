@@ -29,6 +29,7 @@ all: clean zip tar
 	-mkdir ${PACKDIR}
 	-cp *.py ${PACKDIR}
 	-cp -R tools ${PACKDIR}
+	-cp LICENSE ${PACKDIR}
 	-touch .packDirectory
 
 .PHONY: zip

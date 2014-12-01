@@ -49,6 +49,7 @@ class Fragment:
     self.atomCount    = 0
     self.residues     = []
     self.diffMat      = []
+    self.sdf          = []
     self.partial      = partial
 
   def calcValues(self, viscosity=0.0, HarmMe=0.0, radius=0.0):
