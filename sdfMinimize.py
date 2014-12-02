@@ -159,10 +159,13 @@ class sdfMinFunc:
         inVals    = np.array(v['data'])
         inWeights = np.array(v['weight'])
 
+    # diff  = (np.array(comp) - inVals) / inVals
+    # diff *= np.log(1 + inVals/inWeights)
+
+    diff = (np.array(comp) - inVals) / inWeights
+
     # diff  = (np.array(comp)[:,:,0:2] - inVals)
-    diff  = (np.array(comp) - inVals) / inVals
     # diff /= inWeights / inVals
-    diff *= np.log(1 + inVals/inWeights)
     # print(inVals, inWeights)
     # print(np.log(1 + inVals/inWeights))
     return np.ravel(diff)
@@ -192,8 +195,9 @@ class sdfMinimize:
     LarmorF       = []
     inData        = []
     inWeights     = []
-    guessTau      = None
-    guessS        = None
+    guessTau      = []
+    guessS        = []
+    fitRes        = []
 
     optionsParser   = re.compile("^\\s*(\\w+)\\((.*)\\)\\s*")
     frequencyParser = re.compile("^\\s*([+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+))\\s*")
@@ -201,7 +205,7 @@ class sdfMinimize:
     with open(inFile, mode="r", encoding="utf-8") as inF:
       lines = inF.readlines()
     firstLine = lines[0]
-    options   = firstLine.split(',')
+    options   = firstLine.split(';')
     for o in options:
       if o.strip() == "weights" or o.strip() == "uncertainties":
         weights       = True
@@ -216,10 +220,14 @@ class sdfMinimize:
               resFreq = frequencyParser.match(f)
               if resFreq:
                 LarmorF.append(float(resFreq.group(1)))
-          if key == "tau":
-            guessTau = float(param)
-          if key == "S":
-            guessS   = float(param)
+          if key == "Tau" or key == "tau":
+            tList = param.split(',')
+            for t in tList:
+              guessTau.append(float(t))
+          if key == "S" or key == "s":
+            sList = param.split(',')
+            for s in sList:
+              guessS.append(float(s))
     if LarmorF == []:
       LarmorF.append(opt.larmorFreq)
 
@@ -287,28 +295,31 @@ class sdfMinimize:
           opt.models.models, LarmorF, inData, inWeights, resid, opt.threads,
           bounds)
 
+        result = None
+        if len(guessS) >= 3 and len(guessTau) >= 3:
+          sB  = [copy.copy(guessS[0]),   copy.copy(guessS[1]),    int(guessS[2])-1]
+          tB  = [copy.copy(guessTau[0]), copy.copy(guessTau[1]),  int(guessTau[2])-1]
 
-        sB  = [1e-10, 1e-9, 4]
-        tB  = [0.1,   0.9,  4]
-        S   = np.arange(sB[0], sB[1]+ (sB[1] - sB[0])/sB[2], (sB[1] - sB[0])/sB[2])
-        Tau = np.arange(tB[0], tB[1]+ (tB[1] - tB[0])/tB[2], (tB[1] - tB[0])/tB[2])
-        inV = (S[0:sB[2]+1], Tau[0:tB[2]+1])
-        inVals = np.array(inV)
+          S   = np.arange(sB[0], sB[1]+ (sB[1] - sB[0])/sB[2], (sB[1] - sB[0])/sB[2])
+          Tau = np.arange(tB[0], tB[1]+ (tB[1] - tB[0])/tB[2], (tB[1] - tB[0])/tB[2])
+          inV = (Tau[0:sB[2]+1], S[0:tB[2]+1])
+          inVals = np.array(inV)
 
-        # halfInCount = int(inVals.shape[1]**inVals.shape[0] / 2)
-        # print(halfInCount)
-        minimize    = Minimize(remFact=10.0, useCount=25)
-        result      = minimize(
-          minFunc,
-          inVals,
-          np.array([2e-10, 0.2]),
-          bounds
-          )
-        # result = optimize.leastsq(
-        #   minFunc,
-        #   np.array([0.0,0.0]),
-        #   # epsfcn=1e-5
-        #   )
+          # halfInCount = int(inVals.shape[1]**inVals.shape[0] / 2)
+          # print(halfInCount)
+          minimize    = Minimize(remFact=10.0, useCount=25)
+          result      = minimize(
+            minFunc,
+            inVals,
+            np.array([2e-10, 0.2]),
+            bounds
+            )
+        else:
+          result = optimize.leastsq(
+            minFunc,
+            np.array([guessTau[0],guessS[0]]),
+            # epsfcn=1e-5
+            )
         # result  = optimize.minimize(
         #   minFunc,
         #   np.array([1e-5, 0.5]),
@@ -330,6 +341,8 @@ class sdfMinimize:
 
         bFunc = boundingFunc(bounds)
         print("{}:".format(resid), result)
+
+
         # res = bFunc(result[0])
         # print("{}: {:e}  {:e}".format(resid, res[0], res[1]))
 

@@ -196,8 +196,8 @@ class Minimize:
 				stdDev = math.sqrt(stdDev)
 				print(" stdDev(rss) =", stdDev)
 				cutoff = copy(avg)
-				if len(points) <= 30:
-					cutoff += stdDev
+				# if len(points) <= 30:
+				cutoff += stdDev
 				for p in points:
 					if p['rss'] <= cutoff:
 						rCount += 1
@@ -228,7 +228,7 @@ class Minimize:
 			# while first or 1.0-(rss - points[0]['rss']) / rss >= max(acc, tol):
 			for i in range(maxN):
 				# first = False
-				print("+++ Gauss-Newton {} ({:e})+++".format(i, 1.0 - (rss - iPoints[0]['rss']) / rss))
+				print("+++ Levenberg-Marquard {} ({:e})+++".format(i, 1.0 - (rss - iPoints[0]['rss']) / rss))
 				points = copy(oPts)
 				rss = points[0]['rss']
 				oPts = []
