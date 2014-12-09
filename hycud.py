@@ -47,7 +47,7 @@ from sdfAnalysis      import sdfAnalysis
 from sdfMinimize      import sdfMinimize
 
 default_temporaryStorage    = path.abspath(default_temporaryStorage)
-version                     = "v3.4.6"
+version                     = "v3.4.7"
 
 if vers2Num(options_ver) < vers2Num(version):
   updateUserOptions(version)
