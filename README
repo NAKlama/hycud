@@ -1,0 +1,23 @@
+HYCUD
+
+HYdrodynamic CoUpling of Domains (HYCUD) is a Python-based program for prediction of rotational correlation time of folded protein domains in the context of flexible multidomain proteins and protein complexes with long disordered tails and/or interdomain linkers as well as intrinsically disordered proteins. HYCUD starts from a structural ensemble of the protein of interest together with a definition of its modular architecture, calculates the effective viscosity experienced locally by each of its modules and correspondingly scales the reorientational correlation time of isolated domains obtained through experiment or standard hydrodynamic calculations, and finally averages the scaled correlation times over the structural ensemble. The use of HYCUD has been validated in several protein systems differing in size, domain architecture, assembly state and disorder level.
+
+
+Papers:
+
+- "Predicting the Rotational Tumbling of Dynamic Multidomain Proteins
+  and Supramolecular Complexes"
+  Rezaei-Ghaleh, Nasrollah; Klama, Frederik; Munari, Francesca;
+  Zweckstetter, Markus;
+  ANGEWANDTE CHEMIE-INTERNATIONAL EDITION
+  Oct 2013 Vol: 52(43) p11410-11414
+- "Long-Range Correlated Dynamics in Intrinsically Disordered Proteins"
+  Parigi, Giacomo; Rezaei-Ghaleh, Nasrollah; Giachetti, Andrea; Becker, Stefan;
+  Fernandez, Claudio; Blackledge, Martin; Griesinger, Christian; Zweckstetter, Markus;
+  Luchinat, Claudio;
+  JOURNAL OF THE AMERICAN CHEMICAL SOCIETY
+  2014 DOI: 10.1021/ja506820r
+
+Contact: mzwecks@gwdg.de
+Website: http://www3.mpibpc.mpg.de/groups/zweckstetter/_links/software_hycud.html
+
