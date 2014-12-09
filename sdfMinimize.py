@@ -137,11 +137,6 @@ class sdfMinFunc:
             sdf['R'].addStatItem(msdf['R'])
             sdf['noe'].addStatItem(msdf['noe'])
 
-    # self.fragCmax = 0
-    # for sdf in resSDF:
-    #   if sdf['fragC'] > self.fragCmax:
-    #     self.fragCmax = sdf['fragC']
-
     comp = []
     for wh in self.wH:
       comp.append(  list(
@@ -159,34 +154,9 @@ class sdfMinFunc:
         inVals    = np.array(v['data'])
         inWeights = np.array(v['weight'])
 
-    # diff  = (np.array(comp) - inVals) / inVals
-    # diff *= np.log(1 + inVals/inWeights)
-
     diff = (np.array(comp) - inVals) / inWeights
 
-    # diff  = (np.array(comp)[:,:,0:2] - inVals)
-    # diff /= inWeights / inVals
-    # print(inVals, inWeights)
-    # print(np.log(1 + inVals/inWeights))
     return np.ravel(diff)
-
-    # diffSq  = diff**2
-    # # diffSq *= np.array(inWeights)
-    # sumDiff = np.sum(diffSq)
-    # print(" fun: ", sumDiff)
-
-    # # Debugging only, DELETE!
-    # with open("trace.txt", mode='a', encoding="utf-8") as oFile:
-    #   oFile.write("{:.6e}\t{:.6e}\t{:.6e}\n".format(par[0], par[1], sumDiff))
-    # with open("diffDebug.txt", mode='a', encoding="utf-8") as oFile:
-    #   oFile.write("\n\n=== par: {} ===".format(par))
-    #   oFile.write("\ncomp: {}".format(comp))
-    #   oFile.write("\nvals: {}".format(inVals))
-    #   oFile.write("\ndiff: {}".format(diff))
-
-    # return sumDiff
-
-
 
 
 class sdfMinimize:
@@ -296,30 +266,49 @@ class sdfMinimize:
           bounds)
 
         result = None
-        if len(guessS) >= 3 and len(guessTau) >= 3:
-          sB  = [copy.copy(guessS[0]),   copy.copy(guessS[1]),    int(guessS[2])-1]
-          tB  = [copy.copy(guessTau[0]), copy.copy(guessTau[1]),  int(guessTau[2])-1]
-
-          S   = np.arange(sB[0], sB[1]+ (sB[1] - sB[0])/sB[2], (sB[1] - sB[0])/sB[2])
+        sB  = []
+        tB  = []
+        S   = None
+        Tau = None
+        if len(guessS) >= 2:
+          sB  = [ guessS[0] - guessS[1]
+                , guessS[0] + guessS[1]
+                ]
+          if len(guessS) >= 3:
+            sB.append(int(guessS[2])-1)
+          else:
+            sB.append(2)
+          S = np.arange(sB[0], sB[1]+ (sB[1] - sB[0])/sB[2], (sB[1] - sB[0])/sB[2])
+        else:
+          S = np.array([guessS[0]])
+        if len(guessTau) >= 2:
+          tB  = [ guessTau[0] - guessTau[1]
+                , guessTau[0] + guessTau[1]
+                ]
+          if len(guessS) >= 3:
+            tB.append(int(guessTau[2])-1)
+          else:
+            tB.append(2)
           Tau = np.arange(tB[0], tB[1]+ (tB[1] - tB[0])/tB[2], (tB[1] - tB[0])/tB[2])
-          inV = (Tau[0:sB[2]+1], S[0:tB[2]+1])
-          inVals = np.array(inV)
+        else:
+          Tau = np.array(guessTau[0])
+        inV = (Tau[0:sB[2]+1], S[0:tB[2]+1])
+        inVals = np.array(inV)
 
           # halfInCount = int(inVals.shape[1]**inVals.shape[0] / 2)
           # print(halfInCount)
-          minimize    = Minimize(remFact=10.0, useCount=25)
-          result      = minimize(
-            minFunc,
-            inVals,
-            np.array([2e-10, 0.2]),
-            bounds
-            )
-        else:
-          result = optimize.leastsq(
-            minFunc,
-            np.array([guessTau[0],guessS[0]]),
-            # epsfcn=1e-5
-            )
+        minimize    = Minimize(remFact=10.0, useCount=25)
+        result      = minimize(
+          minFunc,
+          inVals,
+          np.array([2e-10, 0.2]),
+          bounds
+          )
+        # result = optimize.leastsq(
+        #   minFunc,
+        #   np.array([guessTau[0],guessS[0]]),
+        #   # epsfcn=1e-5
+        #   )
         # result  = optimize.minimize(
         #   minFunc,
         #   np.array([1e-5, 0.5]),
