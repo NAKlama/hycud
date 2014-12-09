@@ -160,7 +160,8 @@ class sdfAnalysis:
                       , 'sigma':  None
                       , 'noe':    None
                       , 'ratio':  None
-                      # , 'tau':    None
+                      , 'tau':    None
+                      , 'A':      None
                       , 'fragC':  0
                       })
       # print(self.models.residues)
@@ -178,13 +179,15 @@ class sdfAnalysis:
                   sdfAvg['sigma'] = npStatItem()
                   sdfAvg['noe']   = npStatItem()
                   sdfAvg['ratio'] = npStatItem()
-                  # sdfAvg['tau']   = npStatItem()
+                  sdfAvg['tau']   = npStatItem()
+                  sdfAvg['A']     = npStatItem()
                 sdfAvg['J'].addValue(sdf['J'])
                 sdfAvg['R'].addValue(sdf['R'])
                 sdfAvg['sigma'].addValue(np.array([sdf['sigma']]))
                 sdfAvg['noe'].addValue(np.array([sdf['noe']]))
                 sdfAvg['ratio'].addValue(np.array([sdf['ratio']]))
-                # sdfAvg['tau'].addValue(np.array([sdf['tau']]))
+                sdfAvg['tau'].addValue(np.array([sdf['tau']]))
+                sdfAvg['A'].addValue(np.array([sdf['A']]))
                 sdfAvg['fragC'] += sdf['fragC']
 
     for sdf in resSDF:
@@ -195,6 +198,7 @@ class sdfAnalysis:
         sdf['noe']    = npStatItem()
         sdf['ratio']  = npStatItem()
         sdf['tau']    = npStatItem()
+        sdf['A']    = npStatItem()
       for m in self.models.models:
         for msdf in m.resSDF:
           if msdf['J'] is not None and sdf['res'] == msdf['res']:
@@ -203,7 +207,8 @@ class sdfAnalysis:
             sdf['sigma'].addStatItem(msdf['sigma'])
             sdf['noe'].addStatItem(msdf['noe'])
             sdf['ratio'].addStatItem(msdf['ratio'])
-            # sdf['tau'].addStatItem(msdf['tau'])
+            sdf['tau'].addStatItem(msdf['tau'])
+            sdf['A'].addStatItem(msdf['A'])
             sdf['fragC'] += msdf['fragC']
 
     self.fragCmax = 0
@@ -316,6 +321,36 @@ class sdfAnalysis:
             print("ratio:", ratio, end="")
 
           print()
+
+
+    print("\n{}0m".format(csi))
+    # print(" Res  | R1                   R2                   "
+    #      +"sigma                noe                  R2/R1")
+    # print("------+-------------------------------------------"
+    #      +"-------------------------------------------------------------")
+    for sdf in self.resSDF:
+      if sdf['A'].weight > 0.0:
+        count  = sdf['A'].weight / len(self.models.models)
+        ratio  = count / self.size
+        fragRatio = sdf['fragC'] / self.fragCmax
+        print("{:>5d} | ".format(sdf['res']), end='')
+        avg     = sdf['A'].getAvg()[0]
+        stdDev  = sdf['A'].getStdDev()[0]
+        # print(avg)
+        # print(stdDev)
+        for i in range(0, avg.shape[0]):
+          print("{}±{}  ".format(
+            coloredExp(avg[i][0], fragRatio), coloredExp(stdDev[i][0], fragRatio)), end='')
+        print("|  ", end='')
+        avg     = sdf['tau'].getAvg()
+        stdDev  = sdf['tau'].getStdDev()
+        # print(avg)
+        # print(stdDev)
+        for i in range(0, avg.shape[0]):
+          print("{}±{}  ".format(
+            coloredExp(avg[i][0], fragRatio), coloredExp(stdDev[i][0], fragRatio)), end='')
+
+        print()
 
 
 
