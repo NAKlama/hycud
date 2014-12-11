@@ -46,7 +46,7 @@ from OptionsUpdater   import updateUserOptions
 from sdfAnalysis      import sdfAnalysis
 
 default_temporaryStorage    = path.abspath(default_temporaryStorage)
-version                     = "v3.4.5"
+version                     = "v3.4.6"
 
 if vers2Num(options_ver) < vers2Num(version):
   updateUserOptions(version)
@@ -58,6 +58,12 @@ class Options:
     self.verbose    = 0
     self.debug      = 0
     self.resCount   = 0
+
+try:
+  default_larmor = larmor_freq_proton
+except NameError:
+  default_larmor = 600.25
+
 
 
 #############################
@@ -197,6 +203,16 @@ if __name__ == '__main__':
   argParser.add_argument('--sdfResidueSkip',
       default=1, type=int,
       help="Reduce Calculation time by skipping more than one residue in fragmentation")
+  argParser.add_argument('--larmorFreq',
+      default=default_larmor, type=float,
+      help="Set the larmor frequency in MHz (needed for spectral density function)")
+  argParser.add_argument('--tau',
+      default=1e-10, type=float,
+      help="Set tau for the SDF calculation")
+  argParser.add_argument('--order',
+      default=1.0, type=float,
+      help="Set the order parameter for the SDF calculation (1.0)")
+
   if allow_option_weighted_averages and not default_show_weighted_averages:
     argParser.add_argument('--displayWeightedAverages',
       action='store_true',
@@ -268,6 +284,10 @@ if __name__ == '__main__':
   o.harmonicMean    = args['displayHarmonicMean']
   o.sdfResidueSkip  = args['sdfResidueSkip']
   o.sdf             = args['spectralDensityFunction']
+  o.larmorFreq      = args['larmorFreq']
+  o.SDFtau          = args['tau']
+  o.SDForder        = args['order']
+
   if allow_option_weighted_averages and not default_show_weighted_averages:
     o.showWeightedAvg = args['displayWeightedAverages']
   else:
@@ -451,7 +471,7 @@ if __name__ == '__main__':
 
   if o.sdf:
     models.calculateWeightingFactors(o)
-    sdf = sdfAnalysis(models, o.sdfResidueSkip, o.fragSize, o.verbose)
+    sdf = sdfAnalysis(opt, models, o.larmorFreq)
     sdf.calc()
     sdf.average()
     sdf.output()
