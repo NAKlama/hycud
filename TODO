@@ -1,0 +1,15 @@
+- Start at the middle (full grid search, weed out half with partial opt.)
+	- Weed out those one stddev. above avg.
+	@ 10? left do full opt.
+	- Store best solutions, analyze pattern, discard very close solutions
+		- Use these best solutions for second round for bad apples before trying grid
+			search
+	- Don't touch edges until center (14 -> N-14) is complete
+		- Allow higher limits (dont waste CPU time)
+			- scaling up going towards the edge
+	- Go outtwards (symm.) skipping 1 res. each (unless small system)
+		- Do simple opt. using middle res. values
+			- For bad SSDs start partial grid search, grid extends out utils SSD below limit
+	- Remaining half use pascal triangle to estimate tau and S, & simp. optimization
+		- Again grid search for bad apples
+
