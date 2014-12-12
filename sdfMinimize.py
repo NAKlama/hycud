@@ -20,13 +20,15 @@
 
 import numpy as np
 import re
-import scipy.optimize as optimize
+# import scipy.optimize as optimize
+import math
 
 from multiprocessing import Pool
 from sdfFunction import sdfFunction
 
 from StatItem import npStatItem
 from Minimizer import Minimize
+from PascalTriangle import *
 
 import copy
 # import sys
@@ -43,7 +45,7 @@ class boundingFunc:
 
 
 class sdfMinFunc:
-  def __init__(self, models, wH, inVals, inWeights, res, threads, bounds):
+  def __init__(self, models, wH, inVals, inWeights, res, threads, bounds=None):
     self.models     = models
     self.wH         = wH
     self.inVals     = inVals
@@ -59,11 +61,26 @@ class sdfMinFunc:
     # print("Testing: ", usePar, " (", par, ")", sep='', end='')
     # print("Testing: ", par, end='')
 
+
+    # Testing for boundary conditions
+    if self.bounds is not None:
+      outFail = []
+      for i in range(len(self.wH)):
+        outFail += [1e100, 1e100, 1e100]
+      if par[0] < self.bounds[0][0] or par[0] > self.bounds[0][1]:
+        return outFail
+      if par[1] < self.bounds[1][0] or par[1] > self.bounds[1][1]:
+        return outFail
+
+
     # Preparing function to Minimize
     task    = sdfFunction(self.wH)
     task.changeParameters(par)
     # task.changeParameters(usePar)
     task.singleResidueSet(self.residue)
+
+    # print(par)
+    # print(self.residue)
 
     # Minimizing function
     try:
@@ -84,6 +101,7 @@ class sdfMinFunc:
                 , 'fragC':  0
                 } for wh in self.wH ]
 
+    # print(result)
 
     for i in range(len(result)):
       m = self.models[i]
@@ -138,6 +156,7 @@ class sdfMinFunc:
             sdf['noe'].addStatItem(msdf['noe'])
 
     comp = []
+    # print(resSDF)
     for wh in self.wH:
       comp.append(  list(
                     [ sdf['R'].getAvg()[0]
@@ -162,6 +181,7 @@ class sdfMinFunc:
 class sdfMinimize:
   def __init__(self, opt, inFile):
     weights       = False
+    models        = opt.models.models
     LarmorF       = []
     inData        = []
     inWeights     = []
@@ -218,6 +238,7 @@ class sdfMinimize:
     #   inData.append([])
     #   inWeights.append([])
     inData = []
+    residues = []
 
     for l in lines:
       res = dataParser.match(l)
@@ -252,87 +273,119 @@ class sdfMinimize:
                         , 'data':   copy.copy(Data)
                         , 'weight': copy.copy(Weight)
                         } )
-    for l in lines:
-      res = dataParser.match(l)
-      if res:
-        data   = res.groups()
-        resid  = int(data[0])
-        bounds = np.array([ [1e-12,   1e-8]
-                          , [1e-5,    0.99999]
-                          ])
+        residues.append(resid)
 
-        minFunc = sdfMinFunc(
-          opt.models.models, LarmorF, inData, inWeights, resid, opt.threads,
-          bounds)
+    residues  = sorted(residues)
 
-        result = None
-        sB  = []
-        tB  = []
-        S   = None
-        Tau = None
-        if len(guessS) >= 2:
-          sB  = [ guessS[0] - guessS[1]
-                , guessS[0] + guessS[1]
-                ]
-          if len(guessS) >= 3:
-            sB.append(int(guessS[2])-1)
-          else:
-            sB.append(2)
-          S = np.arange(sB[0], sB[1]+ (sB[1] - sB[0])/sB[2], (sB[1] - sB[0])/sB[2])
-        else:
-          S = np.array([guessS[0]])
-        if len(guessTau) >= 2:
-          tB  = [ guessTau[0] - guessTau[1]
-                , guessTau[0] + guessTau[1]
-                ]
-          if len(guessS) >= 3:
-            tB.append(int(guessTau[2])-1)
-          else:
-            tB.append(2)
-          Tau = np.arange(tB[0], tB[1]+ (tB[1] - tB[0])/tB[2], (tB[1] - tB[0])/tB[2])
-        else:
-          Tau = np.array(guessTau[0])
-        inV = (Tau[0:sB[2]+1], S[0:tB[2]+1])
-        inVals = np.array(inV)
+    # Split center residues and edges
+    centerRes = []
+    edgeRes   = []
+    results   = []
+    for r in residues:
+      if r > opt.fragSize and r <= residues[-1] - opt.fragSize:
+        centerRes.append(r)
+      else:
+        edgeRes.append(r)
 
-          # halfInCount = int(inVals.shape[1]**inVals.shape[0] / 2)
-          # print(halfInCount)
-        minimize    = Minimize(remFact=10.0, useCount=25)
-        result      = minimize(
-          minFunc,
-          inVals,
-          np.array([2e-10, 0.2]),
-          bounds
-          )
-        # result = optimize.leastsq(
-        #   minFunc,
-        #   np.array([guessTau[0],guessS[0]]),
-        #   # epsfcn=1e-5
-        #   )
-        # result  = optimize.minimize(
-        #   minFunc,
-        #   np.array([1e-5, 0.5]),
-        #   # method="L-BFGS-B",
-        #   method="TNC",
-        #   # method="SLSQP",
-        #   bounds=[(1e-14, 1e-5), (0.1, 0.9)],
-        #   options={'disp': True}
-        #   )
-        # result  = optimize.basinhopping(
-        #   minFunc,
-        #   np.array([1e-5, 0.5]),
-        #   # method="L-BFGS-B",
-        #   # method="TNC",
-        #   # method="SLSQP",
-        #   # bounds=[(1e-14, 1e-5), (0.1, 0.9)],
-        #   # options={'disp': True}
-        #   )
+    # Boundry conditions
+    bounds = [[1e-12, 1e-8], [1e-5, 0.99999]]
 
-        bFunc = boundingFunc(bounds)
-        print("{}:".format(resid), result)
+    centerPoint = 0
+    for r in centerRes:
+      centerPoint += r
+    centerPoint = math.floor(float(centerPoint) / len(centerRes))
+
+    # Initialize Minimization Functions
+    minimize = Minimize(gridSpec=(guessTau, guessS))
+
+    # Get starting point for grid search
+    initVal = np.array([guessTau[0], guessS[0]])
+    optRss  = 1e200
+    if minimize.enableGrid:
+      print("Grid search for Residue ", centerPoint)
+      F = sdfMinFunc(models, LarmorF, inData, inWeights, centerPoint, opt.threads, bounds)
+      R = minimize(F, None, mode="grid")
+
+      # Spot Clusters
+      clusterCutOff = 0.001 ############
+      n   = 0
+      while n < len(R):
+        val  = R[n]['par']
+        Rout = R[:n+1]
+        for r in R[n+1:]:
+          ratio = np.fabs((r['par'] - val) / val)
+          if np.any(np.greater(ratio, clusterCutOff)):
+            Rout.append(r)
+        R = Rout
+        n += 1
+
+      results.append({'res': centerPoint, 'min': R})
+      initVal = R[0]['par']
+      optRss  = R[0]['rss']
+
+    oddRes  = centerRes[::2]
+    evenRes = centerRes[1::2]
+
+    # First minimization on optimal value
+    for r in evenRes:
+      if r != centerPoint:
+        print("Minimizing residue", r)
+        F = sdfMinFunc(models, LarmorF, inData, inWeights, r, opt.threads, bounds)
+        R = minimize(F, initVal, mode="quick")
+        results.append({'res': r, 'min': R})
+
+    # Sort results by rss for comparisons
+    sResults = sorted(results, key=lambda v:v['min'][0]['rss'])
+
+    # Trying other minima for those above the cutoff
+    rssTrustCutoff = 10 * optRss
+    for r in sResults:
+      if r['min'][0]['rss'] > rssTrustCutoff:
+        print("Residue", r['res'], "is above the cutoff trying different minima")
+        for initVal in results[0]['min'][1:]:
+          F = sdfMinFunc(models, LarmorF, inData, inWeights, r['res'], opt.threads, bounds)
+          R = minimize(F, initVal, mode="quick")
+          if R['rss'] <= rssTrustCutoff:
+            r['min'] = R
+            break
+
+    # Outward moving grid search for those above the cutoff
+    for r in sResults:
+      if r['min'][0]['rss'] > rssTrustCutoff:
+        print("Residue", r['res'], "is above the cutoff trying grid search")
+        F = sdfMinFunc(models, LarmorF, inData, inWeights, r['res'], opt.threads, bounds)
+        R = minimize(F, r['min'][0]['par'], mode="extend", compare=rssTrustCutoff)
+        if len(R) > 0:
+          r['min'] = R
+
+    print(results)
 
 
-        # res = bFunc(result[0])
-        # print("{}: {:e}  {:e}".format(resid, res[0], res[1]))
+    # for r in residues:
+    #   # bounds = np.array([ [1e-12,   1e-8]
+    #   #                   , [1e-5,    0.99999]
+    #   #                   ])
+
+    #   minFunc = sdfMinFunc(
+    #     models, LarmorF, inData, inWeights, resid, opt.threads)
+
+    #   result = None
+    #   sB  = []
+    #   tB  = []
+    #   S   = None
+    #   Tau = None
+
+    #   minimize    = Minimize()
+
+
+    #   result      = minimize(
+    #     minFunc,
+    #     inVals,
+    #     np.array([2e-10, 0.2]),
+    #     bounds
+    #     )
+
+
+    #   print("{}:".format(resid), result)
 
 
