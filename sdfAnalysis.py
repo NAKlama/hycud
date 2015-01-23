@@ -42,6 +42,8 @@ class sdfAnalysis:
     self.resSDF   = []
     self.verbose  = opt.verbose
     self.threads  = opt.threads
+    self.tau      = opt.SDFtau
+    self.order    = opt.SDForder
     if type(wH) == type(3.2):
       self.wH     = [wH]
     elif type(wH) == type([3.2]):
@@ -53,6 +55,7 @@ class sdfAnalysis:
   def calc(self):
     sdf_pool = Pool(processes=self.threads)
     task     = sdfFunction(self.wH)
+    task.changeParameters((self.tau, self.order))
     result   = sdf_pool.map(task, self.models.models)
     for i in range(len(result)):
       m = self.models.models[i]

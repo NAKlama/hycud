@@ -208,6 +208,12 @@ if __name__ == '__main__':
   argParser.add_argument('--larmorFreq',
       default=default_larmor, type=float,
       help="Set the larmor frequency in MHz (needed for spectral density function)")
+  argParser.add_argument('--tau',
+      default=1e-10, type=float,
+      help="Set tau for the SDF calculation")
+  argParser.add_argument('--order',
+      default=1.0, type=float,
+      help="Set the order parameter for the SDF calculation (1.0)")
   if allow_option_weighted_averages and not default_show_weighted_averages:
     argParser.add_argument('--displayWeightedAverages',
       action='store_true',
@@ -281,6 +287,8 @@ if __name__ == '__main__':
   o.sdf             = args['spectralDensityFunction']
   o.sdfFit          = args['spectralDensityFunctionFit']
   o.larmorFreq      = args['larmorFreq']
+  o.SDFtau          = args['tau']
+  o.SDForder        = args['order']
   if allow_option_weighted_averages and not default_show_weighted_averages:
     o.showWeightedAvg = args['displayWeightedAverages']
   else:
