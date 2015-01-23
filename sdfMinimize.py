@@ -28,7 +28,7 @@ from sdfFunction import sdfFunction
 
 from StatItem import npStatItem
 from Minimizer import Minimize
-from PascalTriangle import *
+from PascalTriangle import PascalTriangle
 
 import copy
 # import sys
@@ -66,11 +66,14 @@ class sdfMinFunc:
     if self.bounds is not None:
       outFail = []
       for i in range(len(self.wH)):
-        outFail += [1e100, 1e100, 1e100]
+        outFail += [1e20, 1e20, 1e20]
+      outFail = np.array(outFail)
       if par[0] < self.bounds[0][0] or par[0] > self.bounds[0][1]:
-        return outFail
+        m = max(self.bounds[0][0] - par[0], par[0] - self.bounds[0][1])
+        return outFail * m
       if par[1] < self.bounds[1][0] or par[1] > self.bounds[1][1]:
-        return outFail
+        m = max(self.bounds[1][0] - par[1], par[1] - self.bounds[1][1])
+        return outFail * m
 
 
     # Preparing function to Minimize
@@ -307,7 +310,7 @@ class sdfMinimize:
       R = minimize(F, None, mode="grid")
 
       # Spot Clusters
-      clusterCutOff = 0.001 ############
+      clusterCutOff = 0.01 ############
       n   = 0
       while n < len(R):
         val  = R[n]['par']
@@ -335,30 +338,115 @@ class sdfMinimize:
         results.append({'res': r, 'min': R})
 
     # Sort results by rss for comparisons
-    sResults = sorted(results, key=lambda v:v['min'][0]['rss'])
+    sResults = []
+    for res in evenRes:
+      curResRes = []
+      for r in results:
+        if r['res'] == res:
+          curResRes.append(r)
+      sResults.append(sorted(curResRes, key=lambda v:v['min'][0]['rss']))
 
-    # Trying other minima for those above the cutoff
+    # # Trying other minima for those above the cutoff
     rssTrustCutoff = 10 * optRss
-    for r in sResults:
-      if r['min'][0]['rss'] > rssTrustCutoff:
-        print("Residue", r['res'], "is above the cutoff trying different minima")
-        for initVal in results[0]['min'][1:]:
-          F = sdfMinFunc(models, LarmorF, inData, inWeights, r['res'], opt.threads, bounds)
-          R = minimize(F, initVal, mode="quick")
-          if R['rss'] <= rssTrustCutoff:
-            r['min'] = R
-            break
+    # for r in sResults:
+    #   if r['min']['rss'] > rssTrustCutoff:
+    #     print("Residue", r['res'], "is above the cutoff trying different minima")
+    #     for initVal in [x[0]['min'][1:] for x in sResults if x['res'] == r['res']]:
+    #       F = sdfMinFunc(models, LarmorF, inData, inWeights, r['res'], opt.threads, bounds)
+    #       R = minimize(F, initVal, mode="quick")
+    #       if R['rss'] <= rssTrustCutoff:
+    #         r['min'] = R
+    #         break
+
+    # # Sort results by rss for comparisons
+    # sResults = []
+    # for res in evenRes:
+    #   curResRes = []
+    #   for r in results:
+    #     if r['res'] == res:
+    #       curResRes.append(r)
+    #   sResults.append(sorted(curResRes, key=lambda v:v['min'][0]['rss']))
 
     # Outward moving grid search for those above the cutoff
     for r in sResults:
-      if r['min'][0]['rss'] > rssTrustCutoff:
+      print(r)
+      print(r[0])
+      print(r[0]['min'])
+      print(r[0]['min'][0]['rss'])
+      if r[0]['min'][0]['rss'] > rssTrustCutoff:
         print("Residue", r['res'], "is above the cutoff trying grid search")
         F = sdfMinFunc(models, LarmorF, inData, inWeights, r['res'], opt.threads, bounds)
-        R = minimize(F, r['min'][0]['par'], mode="extend", compare=rssTrustCutoff)
-        if len(R) > 0:
-          r['min'] = R
+        Res = minimize(F, r[0]['min'][0]['par'], mode="extend", compare=rssTrustCutoff)
+        if len(Res) > 0:
+          r[0]['min'] = Res
 
-    print(results)
+    results = sResults
+
+    R = []
+    for i in range(max(residues)+1):
+      R.append(None)
+
+    for res in evenRes:
+      R[res] = r[0]['min'][0]
+
+    print("Now calculating odd residues.")
+
+    pascalSize = 3    # Distance to each side
+    pascal = PascalTriangle(pascalSize * 2 - 1)
+    print(pascal.getList())
+    for r in oddRes:
+      print("Residue {}".format(r))
+      tau = 0.0
+      S   = 0.0
+      w   = 0.0
+      for i in range(pascalSize * 2):
+        pos = r - (pascalSize*2 - 1) + 2 * i
+        if R[pos] is not None:
+          p    = pascal.getItem(i)
+          w   += p
+          tau += R[pos]['par'][0] * p
+          S   += R[pos]['par'][1] * p
+          print("p={} w={} tau={} S={}".format(p,w,tau,S))
+      tau /= w
+      S   /= w
+      print("Avg Tau = {}   Avg S = {}".format(tau, S))
+      Fun  = sdfMinFunc(models, LarmorF, inData, inWeights, r, opt.threads, bounds)
+      Res  = minimize(Fun, np.array([tau, S]), mode="quick")
+      R[r] = Res[0]
+
+    print("Results without edge:")
+    for i in range(len(R)):
+      print("{}: {}".format(i, R[i]))
+
+    print("Now calculating edge.")
+    for res in edgeRes:
+      print("Residue {}".format(res))
+      par = None
+      if res <= opt.fragSize:
+        for i in range(len(R)):
+          if R[i] is not None:
+            print(R[i])
+            par = R[i]['par']
+            break
+      else:
+        for i in range(len(R)-1, -1, -1):
+          if R[i] is not None:
+            print(R[i])
+            par = R[i]['par']
+            break
+
+      Fun    = sdfMinFunc(models, LarmorF, inData, inWeights, res, opt.threads, bounds)
+      Res    = minimize(Fun, np.array([tau, S]), mode="quick")
+      print(Res)
+      R[res] = Res[0]
+
+
+
+
+    for i in range(len(R)):
+      if R[i] is not None:
+        print("{:4d}  {:>11.6e}  {:>11.6e}  {:>11.6f}".format(
+          i, R[i]['par'][0], R[i]['par'][1], R[i]['rss']))
 
 
     # for r in residues:

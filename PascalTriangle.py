@@ -20,19 +20,33 @@
 
 
 # This function will only output a pascal triagle, with order n
-def PascalTriangle(n):
-	t = [1,1]
-	if n < 0:
+class PascalTriangle:
+	def __init__(self, n):
+		self.n = n
+		self.t = [1,1]
+		if n < 0:
+			self.t = None
+			return
+		if n == 0:
+			self.t = [1]
+			return
+		if n == 1:
+			return
+		for x in range(n-1):
+			tOut = [1]
+			for i in range(len(self.t)-1):
+				tOut.append(self.t[i] + self.t[i+1])
+			tOut.append(1)
+			self.t = tOut
+
+	def getList(self):
+		return self.t
+
+	def getItem(self, n):
+		if n < len(self.t):
+			return self.t[n]
 		return None
-	if n == 0:
-		return [1]
-	if n == 1:
-		return t
-	for x in range(n-1):
-		tOut = [1]
-		for i in range(len(t)-1):
-			tOut.append(t[i] + t[i+1])
-		tOut.append(1)
-		t = tOut
-	return t
+
+	def getCenter(self):
+		return (self.n+2.0 / 2.0)
 

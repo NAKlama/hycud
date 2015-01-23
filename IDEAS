@@ -1,0 +1,18 @@
+Ideas
+-----
+
+Optimization:
+	- Grid search for a few residues, then use best parameters for the rest
+		- If fit is significantly worse than others, do grid search for that one
+	- Interleaving
+	- Start with middle leave edges to the end
+	- Distance weighting using pascals triangle
+	- Start in the middle, since we have more data there
+	- Use average of previous parameters as starting point
+	? Evaluate typical deviation from this average
+		- Can be used to optimize grid search distance
+	- Initial grid search runs a few rounds of optimization alternating with
+		elimination of the worst candidates, followed by scipy leastsq
+	? Speed comparison scipy and my LevMar
+	$ Implement C++ instead
+

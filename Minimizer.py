@@ -71,7 +71,7 @@ class Minimize:
       res = optimize.leastsq(func, initVal)
     # print(res)
     diff = func(res[0])
-    rss  = np.sum(diff**2)
+    rss  = np.sum(diff ** 2)
     return (res[1], res[0], diff, rss)
 
   def weeder(self, points):
@@ -132,7 +132,7 @@ class Minimize:
             print("par:", p['par'], "  diff:", p['diff'], "  rss:", p['rss'])
 
         # Spotting Clusters
-        clusterCutOff = 0.001
+        clusterCutOff = 0.01
         n = 0
         while n < len(points):
           val = points[n]['par']
