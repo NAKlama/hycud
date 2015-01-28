@@ -47,7 +47,7 @@ from sdfAnalysis      import sdfAnalysis
 from sdfMinimize      import sdfMinimize
 
 default_temporaryStorage    = path.abspath(default_temporaryStorage)
-version                     = "v3.5.0"
+version                     = "v3.5.1"
 
 if vers2Num(options_ver) < vers2Num(version):
   updateUserOptions(version)
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     A sequence of numbers split by ':'. Without a '#' the numbers are a fragment count, with the '#'
     they are residue numbers. Putting a X before the first number will exclude that fragment from the
     calculation. Any residues that are left at the end will be discarded.
-    It is possible to suplly hydrodynamic time and viscosity manually by adding them in brackets behind
+    It is possible to supply hydrodynamic time and viscosity manually by adding them in brackets behind
     the fragment length definition.
 
     Example: 7:56(v2.746,h2.99e-9):6
