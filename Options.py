@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # DO NOT CHANGE THE NEXT LINE!
-options_ver = 'v3.4.6'
+options_ver = 'v3.5.1'
 
 ##################################################
 #          Default values and options            #
