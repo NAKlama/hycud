@@ -478,8 +478,32 @@ class Models:
         if not fragI.partial:
           i         = fragI.num
           commonSum = 0
-          cj  = 10
-          cj /= 36.12
+
+          # NA = 6.02214129e23    # $N_A$
+          #
+          #       1 molecule         1
+          # c   = ----------   = ------------ (mol/Å³)
+          #  ij    (   _    )3    N  × 6 r³
+          #       (  ³√6 r   )     A      ij
+          #        (      ij)
+          #
+          # 1Å³ = 1e-30 m³ = 1e-27ℓ = 1e-24 cm³
+          #
+          #                 1
+          # c   = ---------------------
+          #  ij              -24        (mol / cm³)
+          #        6 × N × 10    × r³
+          #             A           ij
+          #
+          #
+          #                 1                1
+          # constJ  = -------------- = -------------
+          #                     -24     3.613284774
+          #           6 × N × 10
+          #                A
+          #
+
+          constJ  = 1 / 3.613284774
           centerI = fragI.center.getCenter()
           consideredFragments = []
           if opt.sdf:
@@ -531,12 +555,12 @@ class Models:
               rij = linalg.norm(centerI - centerJ)
               # print("\n   i: ", centerI, " j: ", centerJ,
               #       " rij:", rij,
-              #       " cj:", cj,
+              #       " constJ:", constJ,
               #       " wj:", fragJ.getWeight(),
               #       " eta:", fragJ.getEta(),
-              #       " cs:", ((cj * fragJ.getWeight())) / (rij ** 3) * fragJ.getEta()
+              #       " cs:", ((constJ * fragJ.getWeight())) / (rij ** 3) * fragJ.getEta()
               #       ,end="")
-              commonSum += ((cj * fragJ.getWeight())) / (rij ** 3) * fragJ.getEta()
+              commonSum += ((constJ * fragJ.getWeight())) / (rij ** 3) * fragJ.getEta()
           commonSum += 1
           # print(" \n   cs+1:", commonSum)
 
