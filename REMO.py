@@ -57,6 +57,7 @@ class runREMO:
     subprocess.check_output(['nice', '-n', str(self.opt.nice), 'perl', remoExe, "0", PDB_file])
     waitTillFileExists(tmpPDB + ".h")
     subprocess.check_call(['mv', (tmpPDB + '.h'), model.getSprouted()])
+    subprocess.check_call(['rm', '-Rf', tmpDir])
 
 
 def sproutModels(opt, models):

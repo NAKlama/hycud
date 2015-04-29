@@ -160,14 +160,14 @@ class Fragmentation:
         options   = specMatch.group(1)
         num       = int(specMatch.group(2))
         values    = specMatch.group(3)
-        if string.find(options, 'x') != -1 or string.find(options, 'X') != -1:
+        if options.find('x') != -1 or options.find('X') != -1:
           if currRes != 0:
             printError("The option 'X' is only allowed for the first element.")
           else:
             self.firstFrament = num
-            if string.find(options, '#') == -1:
+            if options.find('#') == -1:
               self.firstFragment += 1
-        if string.find(options, '#') != -1:
+        if options.find('#') != -1:
           if num <= currRes:
             printError("Residue numbers have to be strictly in increasing order!")
           num -= currRes
