@@ -1,5 +1,5 @@
 # HYCUD
-# Copyright (C) 2014 Klama, Frederik and Rezaei-Ghaleh, Nasrollah
+# Copyright (C) 2014 Klama, Nina Alexandra and Rezaei-Ghaleh, Nasrollah
 #
 # This file is part of HYCUD.
 #

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # HYCUD
-# Copyright (C) 2014 Klama, Frederik and Rezaei-Ghaleh, Nasrollah
+# Copyright (C) 2014 Klama, Nina Alexandra and Rezaei-Ghaleh, Nasrollah
 #
 # This file is part of HYCUD.
 #
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
 	model = 1
 
-	outFile.write("REMARK Generated with makePDT.py ({}), written by Frederik Klama\n".format(version))
+	outFile.write("REMARK Generated with makePDT.py ({}), written by Nina Alexandra Klama\n".format(version))
 	outFile.write("REMARK \n")
 	outFile.write("REMARK Input directory: {}\n".format(inDir))
 
